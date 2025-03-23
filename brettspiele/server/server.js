@@ -5,7 +5,13 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+    transports: ['polling'],
+    cors: {
+        origin: "https://erizzle.de",
+        methods: ["GET", "POST"]
+    }
+});
 
 // Statische Dateien bereitstellen
 app.use(express.static(path.join(__dirname, '..')));

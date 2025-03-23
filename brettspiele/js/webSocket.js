@@ -20,7 +20,10 @@ class GameSocketClient {
     connect() {
         if (this.socket) return;
         
-        this.socket = io();
+        this.socket = io({
+            transports: ['polling'],
+            path: '/socket.io'
+        });
         
         // Standard-Ereignisbehandlung
         this.socket.on('connect', () => {
