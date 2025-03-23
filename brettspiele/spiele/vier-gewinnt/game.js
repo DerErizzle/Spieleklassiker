@@ -237,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         players = data.players;
         
         // Spieleranzahl prüfen (Vier Gewinnt benötigt genau 2 Spieler)
+        const wasActive = gameActive;
         gameActive = players.length === 2;
         
         // Ersten Spieler als aktiven Spieler setzen
@@ -244,8 +245,16 @@ document.addEventListener('DOMContentLoaded', function() {
             currentPlayerUsername = players[0].username;
         }
         
-        updatePlayerList(players);
-        updateGameStatus();
+        // Wenn das Spiel jetzt aktiv ist, aber vorher nicht war
+        // (d.h. der zweite Spieler ist gerade beigetreten)
+        if (gameActive && !wasActive) {
+            // Aktualisiere den Spielstatus
+            updatePlayerList(players);
+            updateGameStatus();
+        } else {
+            updatePlayerList(players);
+            updateGameStatus();
+        }
     });
     
     // Spieler verlässt den Raum
