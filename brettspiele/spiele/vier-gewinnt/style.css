@@ -1,0 +1,76 @@
+/* Zusätzliche Styles für Vier Gewinnt */
+
+.game-board {
+    position: relative;
+    cursor: pointer;
+}
+
+.column-hover {
+    position: absolute;
+    top: -80px;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    opacity: 0.5;
+    transition: transform 0.1s;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.winning-cell {
+    animation: pulse 0.8s infinite alternate;
+    box-shadow: 0 0 10px white, 0 0 15px white;
+}
+
+.game-status {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 15px 0;
+    height: 30px;
+}
+
+.your-turn {
+    color: #27ae60;
+    animation: highlight 1.5s infinite;
+}
+
+.not-your-turn {
+    color: #7f8c8d;
+}
+
+@keyframes highlight {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.inactive-game {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.drop-animation {
+    animation: drop 0.5s ease-in;
+}
+
+@keyframes drop {
+    0% { transform: translateY(-300px); }
+    100% { transform: translateY(0); }
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+    .column-hover {
+        top: -60px;
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media (max-width: 480px) {
+    .column-hover {
+        top: -50px;
+        width: 40px;
+        height: 40px;
+    }
+}

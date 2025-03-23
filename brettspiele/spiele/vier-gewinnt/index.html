@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4 in einer Reihe - Brettspiele Online</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Brettspiele Online: 4 in einer Reihe</div>
+                <div class="user-info">
+                    <span id="username-display"></span>
+                    <div class="user-color" id="user-color-display"></div>
+                    <button id="back-button">Zurück zur Übersicht</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="game-container">
+            <div class="game-info-panel">
+                <div class="player-list" id="player-list">
+                    <!-- Spielerliste wird dynamisch befüllt -->
+                </div>
+                <div class="game-status" id="game-status">Warte auf Spieler...</div>
+                <div class="room-code">Raumcode: <span id="room-code-display"></span></div>
+            </div>
+            
+            <div class="game-board" id="game-board">
+                <!-- Spielbrett wird dynamisch erstellt -->
+            </div>
+            
+            <div id="game-controls" style="margin-top: 20px; display: none;">
+                <button id="restart-button">Neues Spiel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/cookies.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="../../js/webSocket.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
