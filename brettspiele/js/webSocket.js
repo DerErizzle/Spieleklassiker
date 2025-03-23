@@ -1,5 +1,5 @@
 /**
- * WebSocket-Client für Brettspiele Online
+ * WebSocket-Client für Geile Games
  */
 
 class GameSocketClient {

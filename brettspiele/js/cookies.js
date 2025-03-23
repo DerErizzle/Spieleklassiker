@@ -1,5 +1,5 @@
 /**
- * Cookie-Funktionen für Brettspiele Online
+ * Cookie-Funktionen für Geile Games
  */
 
 // Cookie setzen
