@@ -35,34 +35,34 @@
                 <div class="game-info">
                     <h3>4 in einer Reihe</h3>
                     <p>Lass deine Spielsteine fallen und bilde eine Reihe aus vier gleichfarbigen Steinen.</p>
-                    <button class="create-room-btn">Spielen</button>
+                    <button class="create-room-btn">Spiel erstellen</button>
                 </div>
             </div>
             
-            <div class="game-card" data-game="alle-ablegen">
+            <div class="game-card disabled" data-game="alle-ablegen">
                 <div class="game-img" style="background-color: #e74c3c;"></div>
                 <div class="game-info">
                     <h3>Alle Ablegen</h3>
                     <p>Werde alle deine Karten los, indem du passende Farben oder Zahlen spielst.</p>
-                    <button class="create-room-btn">Spielen</button>
+                    <button class="create-room-btn" disabled>Spiel erstellen</button>
                 </div>
             </div>
             
-            <div class="game-card" data-game="yacht">
+            <div class="game-card disabled" data-game="yacht">
                 <div class="game-img" style="background-color: #2ecc71;"></div>
                 <div class="game-info">
                     <h3>Yacht</h3>
                     <p>Würfle und sammle Punkte durch verschiedene Kombinationen.</p>
-                    <button class="create-room-btn">Spielen</button>
+                    <button class="create-room-btn" disabled>Spiel erstellen</button>
                 </div>
             </div>
             
-            <div class="game-card" data-game="kartendomino">
+            <div class="game-card disabled" data-game="kartendomino">
                 <div class="game-img" style="background-color: #f1c40f;"></div>
                 <div class="game-info">
                     <h3>Kartendomino</h3>
                     <p>Lege Karten passend an, um Punkte zu sammeln und als Erster alle Karten abzulegen.</p>
-                    <button class="create-room-btn">Spielen</button>
+                    <button class="create-room-btn" disabled>Spiel erstellen</button>
                 </div>
             </div>
         </div>
@@ -112,7 +112,7 @@
             });
             
             // Raumerstellung (Spielstart)
-            const createRoomButtons = document.querySelectorAll('.create-room-btn');
+            const createRoomButtons = document.querySelectorAll('.create-room-btn:not([disabled])');
             createRoomButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const gameCard = this.closest('.game-card');

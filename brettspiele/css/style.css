@@ -172,6 +172,12 @@ header {
     align-items: center;
 }
 
+.user-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .logo {
     font-size: 24px;
     font-weight: bold;
@@ -193,14 +199,27 @@ header {
 .room-form {
     display: flex;
     gap: 10px;
-    margin-left: 20px;
 }
 
 .room-form input {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    width: 120px;
+    width: 200px;
+}
+
+.game-card.disabled {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.game-card.disabled .game-info button {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+.game-card.disabled .game-img {
+    filter: grayscale(70%);
 }
 
 /* Game Styles - Vier Gewinnt */
