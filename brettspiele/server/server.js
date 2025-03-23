@@ -121,6 +121,16 @@ io.on('connection', (socket) => {
                 isHost: p.isHost
             }))
         });
+
+        if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length === 2) {
+            io.to(roomCode).emit('moveUpdate', {
+                column: null,
+                row: null,
+                player: null,
+                nextPlayer: rooms[roomCode].players[0].username,
+                gameState: rooms[roomCode].gameState
+            });
+        }
         
         console.log(`Spieler ${username} trat Raum ${roomCode} bei`);
     });
