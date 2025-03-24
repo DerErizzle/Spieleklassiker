@@ -9,7 +9,6 @@ const SevensHandler = {
 
     initializeGameState() {
         const deck = this.createDeck();
-
         const deckWithoutSevens = deck.filter(card => card.value !== 7);
         const shuffledDeck = this.shuffleDeck(deckWithoutSevens);
 
@@ -24,8 +23,9 @@ const SevensHandler = {
             playerHands: [],
             passCount: [],
             surrendered: [],
+            normalFinishers: [], 
+            surrenderedPlayers: [], 
             gameStarted: false,
-            finishedOrder: [], 
             moves: 0
         };
     },
@@ -50,31 +50,25 @@ const SevensHandler = {
 
     shuffleDeck(deck) {
         const newDeck = [...deck];
-
         for (let i = newDeck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
         }
-
         return newDeck;
     },
 
     sortCards(cards) {
         const suitOrder = { 'spades': 0, 'clubs': 1, 'hearts': 2, 'diamonds': 3 };
-
         return [...cards].sort((a, b) => {
-
             if (suitOrder[a.suit] !== suitOrder[b.suit]) {
                 return suitOrder[a.suit] - suitOrder[b.suit];
             }
-
             return a.value - b.value;
         });
     },
 
     dealCards(gameState, numPlayers) {
         const playerHands = [];
-
         for (let i = 0; i < numPlayers; i++) {
             const hand = [];
             for (let j = 0; j < 12; j++) {
@@ -82,41 +76,40 @@ const SevensHandler = {
                     hand.push(gameState.deck.pop());
                 }
             }
-
             playerHands.push(this.sortCards(hand));
         }
-
         return playerHands;
     },
 
-    isCardPlayable(board, card, finishedOrder = []) {
+    isCardPlayable(board, card) {
+        const { suit, value } = card;
+        const suitValues = board[suit];
+        return suitValues.includes(value - 1) || suitValues.includes(value + 1);
+    },
+
+    isCardPlayableWithSequenceRule(board, card) {
         const { suit, value } = card;
         const suitValues = board[suit];
 
         const isAdjacent = suitValues.includes(value - 1) || suitValues.includes(value + 1);
-
         if (!isAdjacent) {
             return false;
         }
 
-        if (finishedOrder && finishedOrder.length > 0) {
-            const middleValue = 7;
+        const middleValue = 7;
 
-            if (value < middleValue) {
+        if (value < middleValue) {
 
-                for (let i = value + 1; i < middleValue; i++) {
-                    if (!suitValues.includes(i)) {
-                        return false; 
-                    }
+            for (let i = value + 1; i < middleValue; i++) {
+                if (!suitValues.includes(i)) {
+                    return false;
                 }
-            } 
+            }
+        } else if (value > middleValue) {
 
-            else if (value > middleValue) {
-
-                for (let i = middleValue + 1; i < value; i++) {
-                    if (!suitValues.includes(i)) {
-                        return false; 
-                    }
+            for (let i = middleValue + 1; i < value; i++) {
+                if (!suitValues.includes(i)) {
+                    return false;
                 }
             }
         }
@@ -124,38 +117,32 @@ const SevensHandler = {
         return true;
     },
 
-    isCardPlayableForSurrender(board, card) {
-        const { suit, value } = card;
-        const suitValues = board[suit];
-
-        return suitValues.includes(value - 1) || suitValues.includes(value + 1);
-    },
-
     placePlayableCardsForSurrender(board, cards) {
         let placedCards = [];
         let remainingCards = [...cards];
+        let cardWasPlaced;
 
-        let foundPlayable = true;
-        while (foundPlayable && remainingCards.length > 0) {
-            foundPlayable = false;
+        do {
+            cardWasPlaced = false;
 
             for (let i = remainingCards.length - 1; i >= 0; i--) {
                 const card = remainingCards[i];
 
-                if (this.isCardPlayableForSurrender(board, card)) {
+                if (this.isCardPlayable(board, card)) {
 
                     board[card.suit].push(card.value);
 
                     const removedCard = remainingCards.splice(i, 1)[0];
                     placedCards.push(removedCard);
-                    foundPlayable = true;
+                    cardWasPlaced = true;
                 }
             }
 
             for (const suit in board) {
                 board[suit].sort((a, b) => a - b);
             }
-        }
+
+        } while (cardWasPlaced && remainingCards.length > 0);
 
         debug.log('Platzierte Karten bei Aufgabe:', {
             placedCount: placedCards.length, 
@@ -170,8 +157,8 @@ const SevensHandler = {
         };
     },
 
-    canPlayerPlayCards(board, hand, finishedOrder = []) {
-        return hand.some(card => this.isCardPlayable(board, card, finishedOrder));
+    canPlayerPlayCards(board, hand) {
+        return hand.some(card => this.isCardPlayableWithSequenceRule(board, card));
     },
 
     onPlayerJoined(io, roomCode, room, username) {
@@ -206,7 +193,8 @@ const SevensHandler = {
         room.gameState.playerHands = this.dealCards(room.gameState, totalPlayers);
         room.gameState.passCount = Array(totalPlayers).fill(0);
         room.gameState.surrendered = Array(totalPlayers).fill(false);
-        room.gameState.finishedOrder = [];
+        room.gameState.normalFinishers = [];
+        room.gameState.surrenderedPlayers = [];
         room.gameState.gameStarted = true;
 
         room.currentTurn = this.getRandomStartingPlayer(totalPlayers);
@@ -244,12 +232,7 @@ const SevensHandler = {
 
     getRandomBotColor(existingPlayers) {
         const availableColors = [
-            '#e74c3c', 
-            '#3498db', 
-            '#2ecc71', 
-            '#f1c40f', 
-            '#9b59b6', 
-            '#e67e22'  
+            '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'
         ];
 
         const usedColors = existingPlayers.map(p => p.color);
@@ -276,6 +259,11 @@ const SevensHandler = {
                     username
                 });
 
+                const finishedOrder = [
+                    ...room.gameState.normalFinishers,
+                    ...room.gameState.surrenderedPlayers
+                ];
+
                 socket.emit('gameState', {
                     board: room.gameState.board,
                     hand: room.gameState.playerHands[playerIndex],
@@ -289,10 +277,10 @@ const SevensHandler = {
                         isHost: p.isHost,
                         isBot: p.isBot || false,
                         cardsLeft: p.isBot ? room.gameState.playerHands[room.players.indexOf(p)].length : null,
-                        finished: room.gameState.finishedOrder.includes(p.username),
-                        rank: room.gameState.finishedOrder.indexOf(p.username)
+                        finished: finishedOrder.includes(p.username),
+                        rank: finishedOrder.indexOf(p.username)
                     })),
-                    finishedOrder: room.gameState.finishedOrder
+                    finishedOrder: finishedOrder
                 });
             }
         }
@@ -334,7 +322,6 @@ const SevensHandler = {
     },
 
     handlePass(io, roomCode, room, playerIndex) {
-
         if (room.gameState.passCount[playerIndex] >= 3) {
             debug.log('Spieler hat bereits 3 Mal gepasst:', {
                 roomCode,
@@ -361,7 +348,6 @@ const SevensHandler = {
     },
 
     handleSurrender(io, roomCode, room, playerIndex) {
-
         if (room.gameState.passCount[playerIndex] < 3) {
             debug.log('Spieler versucht aufzugeben, obwohl er weniger als 3 Mal gepasst hat:', {
                 roomCode,
@@ -372,7 +358,7 @@ const SevensHandler = {
         }
 
         const hand = room.gameState.playerHands[playerIndex];
-        if (this.canPlayerPlayCards(room.gameState.board, hand, room.gameState.finishedOrder)) {
+        if (this.canPlayerPlayCards(room.gameState.board, hand)) {
             debug.log('Spieler könnte Karten spielen, aber will aufgeben:', {
                 roomCode,
                 username: room.players[playerIndex].username
@@ -396,20 +382,29 @@ const SevensHandler = {
 
         const playerUsername = room.players[playerIndex].username;
 
-        if (!room.gameState.finishedOrder.includes(playerUsername)) {
-
-            room.gameState.finishedOrder.push(playerUsername);
+        if (!room.gameState.surrenderedPlayers.includes(playerUsername)) {
+            room.gameState.surrenderedPlayers.push(playerUsername);
         }
 
-        const rank = room.gameState.finishedOrder.length - 1;
+        const finishedOrder = [
+            ...room.gameState.normalFinishers,
+            ...room.gameState.surrenderedPlayers
+        ];
+
+        const rank = finishedOrder.indexOf(playerUsername);
 
         debug.log('Spieler aufgegeben, Rangzuweisung:', {
             username: playerUsername,
             rank: rank,
-            finishedOrder: room.gameState.finishedOrder,
+            finishedOrder: finishedOrder,
             remainingCardsCount: remainingCards.length,
             placedCardsCount: placedCards.length
         });
+
+        if (finishedOrder.length >= 3) {
+            this.assignLastPlace(io, roomCode, room);
+            return true;
+        }
 
         this.moveToNextPlayer(io, roomCode, room, {
             type: 'surrender',
@@ -418,14 +413,8 @@ const SevensHandler = {
             playableCardsPlaced: placedCards.length,
             placedCards: placedCards,
             rank: rank,
-            finishedOrder: room.gameState.finishedOrder
+            finishedOrder: finishedOrder
         });
-
-        if (room.gameState.finishedOrder.length >= 3) {
-
-            this.assignLastPlace(io, roomCode, room);
-            return true;
-        }
 
         return true;
     },
@@ -444,7 +433,7 @@ const SevensHandler = {
 
         const card = hand[cardIndex];
 
-        if (!this.isCardPlayable(room.gameState.board, card)) {
+        if (!this.isCardPlayableWithSequenceRule(room.gameState.board, card)) {
             debug.log('Nicht spielbare Karte:', {
                 roomCode,
                 username: room.players[playerIndex].username,
@@ -469,25 +458,41 @@ const SevensHandler = {
                 username: room.players[playerIndex].username
             });
 
-            if (!room.gameState.finishedOrder.includes(room.players[playerIndex].username)) {
-                room.gameState.finishedOrder.push(room.players[playerIndex].username);
+            const playerUsername = room.players[playerIndex].username;
+
+            if (!room.gameState.normalFinishers.includes(playerUsername)) {
+                room.gameState.normalFinishers.push(playerUsername);
             }
 
-            const finishRank = room.gameState.finishedOrder.length - 1; 
+            const finishedOrder = [
+                ...room.gameState.normalFinishers,
+                ...room.gameState.surrenderedPlayers
+            ];
 
-            if (room.gameState.finishedOrder.length >= 3) {
+            const finishRank = finishedOrder.indexOf(playerUsername);
 
+            if (finishedOrder.length >= 3) {
                 this.assignLastPlace(io, roomCode, room);
                 return true;
             }
+
+            this.moveToNextPlayer(io, roomCode, room, {
+                type: 'play',
+                player: room.players[playerIndex].username,
+                card: playedCard,
+                remainingCards: hand.length,
+                rank: finishRank,
+                finishedOrder: finishedOrder
+            });
+
+            return true;
         }
 
         this.moveToNextPlayer(io, roomCode, room, {
             type: 'play',
             player: room.players[playerIndex].username,
             card: playedCard,
-            remainingCards: hand.length,
-            rank: hand.length === 0 ? room.gameState.finishedOrder.length - 1 : undefined
+            remainingCards: hand.length
         });
 
         return true;
@@ -495,15 +500,20 @@ const SevensHandler = {
 
     assignLastPlace(io, roomCode, room) {
 
-        const activePlayers = room.players.filter((p, index) => 
-            !room.gameState.finishedOrder.includes(p.username)
+        const finishedOrder = [
+            ...room.gameState.normalFinishers,
+            ...room.gameState.surrenderedPlayers
+        ];
+
+        const activePlayers = room.players.filter(p => 
+            !finishedOrder.includes(p.username)
         );
 
         if (activePlayers.length === 1) {
             const lastPlayer = activePlayers[0];
             const lastPlayerIndex = room.players.findIndex(p => p.username === lastPlayer.username);
 
-            room.gameState.finishedOrder.push(lastPlayer.username);
+            room.gameState.surrenderedPlayers.push(lastPlayer.username);
 
             const { placedCards, remainingCards } = this.placePlayableCardsForSurrender(
                 room.gameState.board, 
@@ -514,28 +524,29 @@ const SevensHandler = {
 
             debug.log('Letzter Spieler zugewiesen:', {
                 username: lastPlayer.username,
-                rank: room.gameState.finishedOrder.length - 1,
+                rank: finishedOrder.length,
                 remainingCards: remainingCards.length,
                 placedCards: placedCards.length
             });
-
-            this.endGame(io, roomCode, room);
-        } else {
-
-            this.endGame(io, roomCode, room);
         }
+
+        this.endGame(io, roomCode, room);
     },
 
     moveToNextPlayer(io, roomCode, room, lastMove) {
+
+        const finishedOrder = [
+            ...room.gameState.normalFinishers,
+            ...room.gameState.surrenderedPlayers
+        ];
 
         let nextPlayerIndex = (room.currentTurn + 1) % room.players.length;
         let loopCount = 0;
 
         while (loopCount < room.players.length) {
-            if (!room.gameState.finishedOrder.includes(room.players[nextPlayerIndex].username)) {
+            if (!finishedOrder.includes(room.players[nextPlayerIndex].username)) {
                 break; 
             }
-
             nextPlayerIndex = (nextPlayerIndex + 1) % room.players.length;
             loopCount++;
         }
@@ -550,8 +561,7 @@ const SevensHandler = {
 
         if ((lastMove.type === 'surrender' || (lastMove.type === 'play' && lastMove.remainingCards === 0)) 
              && lastMove.rank !== undefined) {
-
-            lastMove.finishedOrder = room.gameState.finishedOrder;
+            lastMove.finishedOrder = finishedOrder;
         }
 
         io.to(roomCode).emit('moveUpdate', {
@@ -571,8 +581,11 @@ const SevensHandler = {
         const bot = room.players[botIndex];
 
         setTimeout(() => {
-
-            const botMove = SevensBotHandler.decideBotMove(room.gameState.board, botHand, room.gameState.passCount[botIndex]);
+            const botMove = SevensBotHandler.decideBotMove(
+                room.gameState.board, 
+                botHand, 
+                room.gameState.passCount[botIndex]
+            );
 
             if (botMove.type === 'play') {
                 this.handleCardPlay(io, roomCode, room, botIndex, botMove.cardIndex);
@@ -585,15 +598,20 @@ const SevensHandler = {
     },
 
     endGame(io, roomCode, room) {
+
+        const finishedOrder = [
+            ...room.gameState.normalFinishers,
+            ...room.gameState.surrenderedPlayers
+        ];
+
         debug.log('Spiel beendet, finishedOrder:', {
             roomCode,
-            finishedOrder: room.gameState.finishedOrder
+            normalFinishers: room.gameState.normalFinishers,
+            surrenderedPlayers: room.gameState.surrenderedPlayers,
+            combinedOrder: finishedOrder
         });
 
-        const finishedOrder = room.gameState.finishedOrder || [];
-
         const ranking = room.players.map(player => {
-
             const rank = finishedOrder.indexOf(player.username);
             const remainingCards = room.gameState.playerHands[room.players.indexOf(player)].length;
 
