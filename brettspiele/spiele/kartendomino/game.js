@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Kartenbild vom CDN laden
                 const cardValue = getCardValueName(i);
-                const cardImageUrl = getCdnUrl(`/games/kartendomino/${cardValue}_of_${cardSuit}.png`);
+                const cardImageUrl = getCdnUrl(`/games/kartendomino/${cardValue}_of_${suit}.png`);
                 cardEl.style.backgroundImage = `url('${cardImageUrl}')`;
                 
                 cardPlaceholder.appendChild(cardEl);
@@ -854,9 +854,9 @@ document.addEventListener('DOMContentLoaded', function() {
         players = data.players;
         currentPlayerUsername = data.currentPlayer;
         board = data.board;
-        hand = data.hand;
-        passCount = data.passCount;
-        surrendered = data.surrendered;
+        hand = data.hand || [];
+        passCount = data.passCount || 0;
+        surrendered = data.surrendered || false;
         playerIndex = data.playerIndex;
         
         // Aktualisiere die finishedOrder Liste wenn vorhanden

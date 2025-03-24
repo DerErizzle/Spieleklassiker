@@ -316,28 +316,28 @@
 }
 
 /* Medaillen-Farben für Platzierungen */
-.ranking-item.place-1 {
+.place-1 {
     background-color: var(--gold-color);
     font-weight: bold;
 }
 
-.ranking-item.place-2 {
+.place-2 {
     background-color: var(--silver-color);
     font-weight: bold;
 }
 
-.ranking-item.place-3 {
+.place-3 {
     background-color: var(--bronze-color);
     font-weight: bold;
     color: white;
 }
 
-.ranking-item.place-4 {
+.place-4 {
     background-color: #f8f9fa;
 }
 
 /* Alter Stil für den Fall, dass wir noch winner nutzen */
-.ranking-item.winner {
+.winner {
     background-color: var(--gold-color);
     font-weight: bold;
 }
