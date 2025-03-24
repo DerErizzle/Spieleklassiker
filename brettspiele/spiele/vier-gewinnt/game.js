@@ -264,10 +264,25 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const randomNumber = Math.floor(Math.random() * 30) + 1;
         const formattedNumber = randomNumber.toString().padStart(2, '0');
-        const audioPath = `../../assets/sounds/drop_${formattedNumber}.ogg`;
-        const audio = new Audio(audioPath);
+        
+        const audio = new Audio();
         audio.volume = 0.3;
-        audio.play().catch(e => console.log('Audio konnte nicht abgespielt werden:', e));
+        
+        const audioSources = [
+            `/spiele/vier-gewinnt/assets/sounds/drop_${formattedNumber}.mp3`,
+            `/spiele/vier-gewinnt/assets/sounds/drop_${formattedNumber}.ogg`,
+            `/spiele/vier-gewinnt/assets/sounds/drop_${formattedNumber}.wav`
+        ];
+        
+        for (const source of audioSources) {
+            try {
+                audio.src = source;
+                audio.play();
+                break;
+            } catch (e) {
+                continue;
+            }
+        }
         
         setTimeout(() => {
             animatedPiece.style.transform = `translateY(${targetTop - hoverRowTop}px)`;
