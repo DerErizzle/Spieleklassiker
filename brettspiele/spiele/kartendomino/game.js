@@ -96,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
     userColorDisplayEl.style.backgroundColor = userColor;
     roomCodeEl.textContent = roomCode;
     gameTableEl.style.display = 'none';
+    gameTableEl.style.visibility = 'hidden';
     passButton.disabled = true;
     surrenderButton.disabled = true;
     surrenderButton.style.display = 'none';
@@ -684,6 +685,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         gameTableEl.style.display = 'flex';
+        gameTableEl.style.visibility = 'visible';
         startGameContainer.style.display = 'none';
         
         setTimeout(() => {
