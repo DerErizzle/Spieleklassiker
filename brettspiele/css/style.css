@@ -259,10 +259,9 @@ header {
     filter: grayscale(70%);
 }
 
-/* Game Styles - Vier Gewinnt */
 .game-container {
     text-align: center;
-    max-width: 800px;
+    max-width: 1300px;
     margin: 0 auto;
 }
 
