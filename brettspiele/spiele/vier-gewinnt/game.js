@@ -262,7 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const targetTop = targetCell.getBoundingClientRect().top - boardEl.getBoundingClientRect().top;
         
-        const audio = new Audio('../../assets/sounds/piece_drop.mp3');
+        const randomNumber = Math.floor(Math.random() * 30) + 1;
+        const formattedNumber = randomNumber.toString().padStart(2, '0');
+        const audioPath = `../../assets/sounds/drop_${formattedNumber}.ogg`;
+        const audio = new Audio(audioPath);
         audio.volume = 0.3;
         audio.play().catch(e => console.log('Audio konnte nicht abgespielt werden:', e));
         
