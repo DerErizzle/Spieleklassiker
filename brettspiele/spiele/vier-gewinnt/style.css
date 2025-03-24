@@ -3,7 +3,7 @@
 /* Spielbrett-Container */
 .game-board {
     display: inline-block;
-    background-color: #3498db;
+    background-color: #1a4d7c; /* Dunkleres Blau statt #3498db */
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -22,6 +22,7 @@
     flex-direction: row;
 }
 
+/* Verbesserte Zellen ohne Lücken */
 .cell {
     width: 70px;
     height: 70px;
@@ -31,6 +32,16 @@
     cursor: pointer;
     transition: background-color 0.1s;
     position: relative;
+}
+
+/* Unsichtbare Hitbox für die ganze Spalte */
+.column-hitbox {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 84px; /* Inklusive Ränder */
+    z-index: 10;
+    cursor: pointer;
 }
 
 /* Hover-Reihe über dem Spielbrett */
@@ -58,19 +69,24 @@
     opacity: 0.3;
 }
 
-/* Animation für fallendes Spielstück */
+/* Verbesserte Animation für fallendes Spielstück */
 .drop-animation {
-    animation: dropPiece 0.5s ease-in;
+    animation: dropPiece 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53);
 }
 
 @keyframes dropPiece {
     0% {
-        transform: translateY(-300%);
-        opacity: 0.5;
+        transform: translateY(-400%);
+        opacity: 1;
+    }
+    70% {
+        transform: translateY(10%);
+    }
+    85% {
+        transform: translateY(-5%);
     }
     100% {
         transform: translateY(0);
-        opacity: 1;
     }
 }
 
@@ -95,6 +111,18 @@
 
 .not-your-turn {
     color: #7f8c8d;
+}
+
+/* Statusmeldung für Verbindungsverlust */
+.connection-status {
+    background-color: #f39c12;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin: 15px 0;
+    font-weight: bold;
+    display: none;
 }
 
 @keyframes highlight {
@@ -130,6 +158,10 @@
         height: 50px;
         margin-bottom: 5px;
     }
+    
+    .column-hitbox {
+        width: 60px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -147,5 +179,9 @@
     .hover-row {
         height: 40px;
         margin-bottom: 4px;
+    }
+    
+    .column-hitbox {
+        width: 48px;
     }
 }

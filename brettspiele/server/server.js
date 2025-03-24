@@ -16,6 +16,19 @@ const io = socketIo(server, {
 // Debug-Modus (auf true setzen für mehr Logging)
 const DEBUG = true;
 
+const DISCONNECT_TIMEOUT = 3000;
+
+const AVAILABLE_COLORS = [
+    '#e74c3c', // rot
+    '#3498db', // blau
+    '#2ecc71', // grün
+    '#f1c40f', // gelb
+    '#9b59b6', // lila
+    '#e67e22'  // orange
+];
+
+const disconnectTimers = {};
+
 // Debug-Logging-Funktion
 function debugLog(message, data = {}) {
     if (DEBUG) {
@@ -159,6 +172,17 @@ io.on('connection', (socket) => {
             
             rooms[roomCode].players[existingPlayerIndex].id = socket.id;
             
+            // Falls es einen Verbindungsverlust-Timer für diesen Spieler gibt, diesen löschen
+            if (disconnectTimers[roomCode] && disconnectTimers[roomCode][username]) {
+                clearTimeout(disconnectTimers[roomCode][username]);
+                delete disconnectTimers[roomCode][username];
+                
+                // Andere Spieler informieren, dass dieser Spieler wieder verbunden ist
+                socket.to(roomCode).emit('playerReconnected', {
+                    username: username
+                });
+            }
+            
             // Socket tritt dem Raum bei
             socket.join(roomCode);
             
@@ -172,7 +196,7 @@ io.on('connection', (socket) => {
             io.to(roomCode).emit('playerJoined', {
                 player: {
                     username,
-                    color: userColor,
+                    color: rooms[roomCode].players[existingPlayerIndex].color,
                     isHost: rooms[roomCode].players[existingPlayerIndex].isHost
                 },
                 players: rooms[roomCode].players.map(p => ({
@@ -209,11 +233,43 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // Überprüfe auf Farbkonflikte und weise gegebenenfalls eine andere Farbe zu
+        let assignedColor = userColor;
+        const existingColors = rooms[roomCode].players.map(p => p.color);
+        
+        if (existingColors.includes(userColor)) {
+            // Farbkonflikt entdeckt, wähle eine andere Farbe
+            debugLog('Farbkonflikt erkannt:', { 
+                roomCode, 
+                username, 
+                requestedColor: userColor,
+                existingColors 
+            });
+            
+            // Finde eine Farbe, die noch nicht in Verwendung ist
+            for (const color of AVAILABLE_COLORS) {
+                if (!existingColors.includes(color)) {
+                    assignedColor = color;
+                    debugLog('Neue Farbe zugewiesen:', { 
+                        roomCode, 
+                        username, 
+                        newColor: assignedColor 
+                    });
+                    break;
+                }
+            }
+            
+            // Falls alle Farben verwendet werden, nimm die erste (sollte bei max. 2 Spielern nicht passieren)
+            if (assignedColor === userColor) {
+                assignedColor = AVAILABLE_COLORS[0];
+            }
+        }
+        
         // Spieler zum Raum hinzufügen
         rooms[roomCode].players.push({
             id: socket.id,
             username,
-            color: userColor,
+            color: assignedColor,
             isHost: false
         });
         
@@ -237,7 +293,7 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('playerJoined', {
             player: {
                 username,
-                color: userColor,
+                color: assignedColor,
                 isHost: false
             },
             players: rooms[roomCode].players.map(p => ({
@@ -246,7 +302,7 @@ io.on('connection', (socket) => {
                 isHost: p.isHost
             }))
         });
-
+    
         if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length === 2) {
             debugLog('Spiel startet (2 Spieler im Raum):', { roomCode });
             io.to(roomCode).emit('moveUpdate', {
@@ -406,12 +462,37 @@ io.on('connection', (socket) => {
         for (const roomCode in rooms) {
             const playerIndex = rooms[roomCode].players.findIndex(p => p.id === socket.id);
             if (playerIndex !== -1) {
-                debugLog('Spieler verlässt Raum (durch Trennung):', { 
+                const username = rooms[roomCode].players[playerIndex].username;
+                
+                debugLog('Spieler vorübergehend getrennt:', { 
                     roomCode, 
                     socketId: socket.id,
-                    username: rooms[roomCode].players[playerIndex].username
+                    username: username
                 });
-                handlePlayerDisconnect(socket, roomCode);
+                
+                // Initialisiere das Timer-Objekt für diesen Raum, falls es noch nicht existiert
+                if (!disconnectTimers[roomCode]) {
+                    disconnectTimers[roomCode] = {};
+                }
+                
+                // Starte einen Timer für diesen Spieler
+                disconnectTimers[roomCode][username] = setTimeout(() => {
+                    debugLog('Verbindungs-Timeout für Spieler:', { 
+                        roomCode, 
+                        username 
+                    });
+                    
+                    // Entferne den Timer
+                    delete disconnectTimers[roomCode][username];
+                    
+                    // Behandle den tatsächlichen Disconnect
+                    handlePlayerDisconnect(socket, roomCode);
+                }, DISCONNECT_TIMEOUT);
+                
+                // Informiere andere Spieler über den vorübergehenden Verbindungsverlust
+                socket.to(roomCode).emit('playerDisconnected', {
+                    username: username
+                });
             }
         }
     });
@@ -429,6 +510,12 @@ function handlePlayerDisconnect(socket, roomCode) {
     
     if (playerIndex !== -1) {
         const player = room.players[playerIndex];
+        
+        // Bereinige Timer, falls vorhanden
+        if (disconnectTimers[roomCode] && disconnectTimers[roomCode][player.username]) {
+            clearTimeout(disconnectTimers[roomCode][player.username]);
+            delete disconnectTimers[roomCode][player.username];
+        }
         
         debugLog('Entferne Spieler aus Raum:', { 
             roomCode, 

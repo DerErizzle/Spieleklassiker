@@ -1,5 +1,5 @@
 /**
- * Vier Gewinnt - Spiellogik (korrigierte Version)
+ * Vier Gewinnt - Verbesserte Spiellogik
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -31,16 +31,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const restartButton = document.getElementById('restart-button');
     const gameControls = document.getElementById('game-controls');
     
-    // Debug-Bereich hinzufügen (optional)
-    const debugArea = document.createElement('div');
-    debugArea.id = 'debug-area';
-    debugArea.style.display = 'none'; // Auf 'block' setzen, um Debug-Ausgabe zu sehen
-    debugArea.style.maxHeight = '200px';
-    debugArea.style.overflow = 'auto';
-    debugArea.style.border = '1px solid #ccc';
-    debugArea.style.padding = '10px';
-    debugArea.style.marginTop = '20px';
-    document.querySelector('.game-container').appendChild(debugArea);
+    // Neues Element für Verbindungsstatus hinzufügen
+    const connectionStatusEl = document.createElement('div');
+    connectionStatusEl.className = 'connection-status';
+    connectionStatusEl.id = 'connection-status';
+    connectionStatusEl.textContent = 'Der andere Spieler hat die Verbindung verloren...';
+    connectionStatusEl.style.display = 'none';
+    document.querySelector('.game-info-panel').appendChild(connectionStatusEl);
     
     // Benutzerdaten anzeigen
     usernameDisplayEl.textContent = username;
@@ -55,8 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let gameBoard = [];
     let hoverPiece = null;
     let opponentHoverPiece = null;
+    let activePlayerColor = userColor; // Tatsächliche Spielerfarbe (kann bei Konflikt geändert werden)
     
-    // Spielbrett initialisieren (KORRIGIERT)
+    // Spielbrett initialisieren (verbessert)
     function initializeBoard() {
         boardEl.innerHTML = '';
         
@@ -79,30 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.dataset.row = row;
                 cell.dataset.column = col;
                 
-                // Klick-Event auf die Zelle (delegiert den Klick auf die Spalte)
-                cell.addEventListener('click', () => {
-                    if (gameActive && currentPlayerUsername === username) {
-                        makeMoveInColumn(col);
-                    }
-                });
-                
-                // Hover-Events
-                cell.addEventListener('mouseover', () => {
-                    if (gameActive && currentPlayerUsername === username) {
-                        showHoverPiece(col);
-                        // Sende hover-Information an andere Spieler
-                        sendHoverUpdate(col);
-                    }
-                });
-                
-                cell.addEventListener('mouseout', () => {
-                    if (gameActive && currentPlayerUsername === username) {
-                        hideHoverPiece();
-                        // Informiere Spieler, dass der Hover beendet wurde
-                        sendHoverUpdate(null);
-                    }
-                });
-                
                 rowDiv.appendChild(cell);
             }
             
@@ -118,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hoverPiece = document.createElement('div');
         hoverPiece.className = 'hover-piece';
         hoverPiece.style.display = 'none';
-        hoverPiece.style.backgroundColor = userColor;
+        hoverPiece.style.backgroundColor = activePlayerColor;
         hoverRow.appendChild(hoverPiece);
         
         // Hover-Stück für den Gegner erstellen
@@ -126,6 +100,39 @@ document.addEventListener('DOMContentLoaded', function() {
         opponentHoverPiece.className = 'hover-piece opponent-hover';
         opponentHoverPiece.style.display = 'none';
         hoverRow.appendChild(opponentHoverPiece);
+        
+        // Hitboxes für Spalten hinzufügen
+        for (let col = 0; col < 7; col++) {
+            const hitbox = document.createElement('div');
+            hitbox.className = 'column-hitbox';
+            hitbox.dataset.column = col;
+            hitbox.style.left = (col * 84) + 'px'; // 70px Zelle + 14px Margin
+            
+            // Event-Listener für die Hitbox
+            hitbox.addEventListener('click', () => {
+                if (gameActive && currentPlayerUsername === username) {
+                    makeMoveInColumn(col);
+                }
+            });
+            
+            hitbox.addEventListener('mouseover', () => {
+                if (gameActive && currentPlayerUsername === username) {
+                    showHoverPiece(col);
+                    // Sende hover-Information an andere Spieler
+                    sendHoverUpdate(col);
+                }
+            });
+            
+            hitbox.addEventListener('mouseout', () => {
+                if (gameActive && currentPlayerUsername === username) {
+                    hideHoverPiece();
+                    // Informiere Spieler, dass der Hover beendet wurde
+                    sendHoverUpdate(null);
+                }
+            });
+            
+            boardEl.appendChild(hitbox);
+        }
     }
     
     // Sende Hover-Update an andere Spieler
@@ -135,12 +142,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 roomCode: roomCode,
                 column: column,
                 username: username,
-                userColor: userColor
+                userColor: activePlayerColor
             });
         }
     }
     
-    // Hover-Stück anzeigen (KORRIGIERT)
+    // Hover-Stück anzeigen (verbessert)
     function showHoverPiece(column) {
         if (!hoverPiece || !gameActive) return;
         
@@ -182,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gameSocket.makeMove(roomCode, column);
     }
     
-    // Spielstein setzen (KORRIGIERT)
+    // Spielstein setzen (verbessert)
     function placePiece(row, column, playerUsername, playerColor) {
         if (row === null || column === null) return;
         
@@ -192,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Zelle färben
             cell.style.backgroundColor = playerColor;
             
-            // Animation hinzufügen (geändert auf drop-animation)
+            // Animation hinzufügen (verbessert)
             cell.classList.add('drop-animation');
             
             // HTML5 Audio für Sound
@@ -203,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Animation nach Abschluss entfernen
             setTimeout(() => {
                 cell.classList.remove('drop-animation');
-            }, 500);
+            }, 800); // Längere Zeit für die verbesserte Animation
         }
     }
     
@@ -230,6 +237,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (player.username === username) {
                 playerName.textContent += ' (Du)';
+                // Aktualisiere die aktive Spielerfarbe falls sie durch Konflikt geändert wurde
+                if (player.color !== userColor) {
+                    activePlayerColor = player.color;
+                    // Aktualisiere auch die Farbe im Hover-Stück
+                    if (hoverPiece) {
+                        hoverPiece.style.backgroundColor = activePlayerColor;
+                    }
+                }
             }
             
             playerDiv.appendChild(playerColorDiv);
@@ -290,6 +305,11 @@ document.addEventListener('DOMContentLoaded', function() {
         updateGameStatus();
     }
     
+    // Verbindungsstatusanzeige aktualisieren
+    function updateConnectionStatus(isDisconnected) {
+        connectionStatusEl.style.display = isDisconnected ? 'block' : 'none';
+    }
+    
     // Event-Listener für Socket.io-Ereignisse
     
     // Bei erfolgreicher Socket-Verbindung
@@ -303,6 +323,9 @@ document.addEventListener('DOMContentLoaded', function() {
     gameSocket.on('playerJoined', (data) => {
         console.log('Spieler beigetreten Event empfangen:', data);
         players = data.players;
+        
+        // Verbindungsstatus aktualisieren
+        updateConnectionStatus(false);
         
         // Spieleranzahl prüfen (Vier Gewinnt benötigt genau 2 Spieler)
         const wasActive = gameActive;
@@ -329,6 +352,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         updatePlayerList(players);
         updateGameStatus();
+    });
+    
+    // Spieler hat die Verbindung verloren
+    gameSocket.on('playerDisconnected', (data) => {
+        console.log('Spieler hat Verbindung verloren:', data);
+        // Zeige Verbindungsstatusanzeige
+        updateConnectionStatus(true);
+    });
+    
+    // Spieler ist wieder verbunden
+    gameSocket.on('playerReconnected', (data) => {
+        console.log('Spieler ist wieder verbunden:', data);
+        // Verstecke Verbindungsstatusanzeige
+        updateConnectionStatus(false);
     });
     
     // Hover-Update von anderen Spielern
