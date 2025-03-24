@@ -3,7 +3,7 @@
 /* Spielbrett-Container */
 .game-board {
     display: inline-block;
-    background-color: #1a4d7c; /* Dunkleres Blau statt #3498db */
+    background-color: transparent; /* Hintergrund wird vom board-background Element bereitgestellt */
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -11,12 +11,35 @@
     position: relative;
 }
 
+/* Spielbrett-Hintergrund */
+.board-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #1a4d7c; /* Dunkleres Blau statt #3498db */
+    border-radius: 10px;
+    z-index: 2; /* Über der Animation-Schicht */
+}
+
+/* Animations-Schicht für fallende Steine (hinter dem Brett) */
+.animation-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1; /* Unter dem Brett */
+    pointer-events: none;
+}
+
 /* Zeilen und Zellen */
 .board-rows {
     display: flex;
     flex-direction: column;
     position: relative;
-    z-index: 1;
+    z-index: 3; /* Über dem Brett-Hintergrund */
 }
 
 .board-row {
@@ -54,7 +77,7 @@
     display: flex;
     justify-content: center;
     margin-bottom: 7px;
-    z-index: 2;
+    z-index: 5;
 }
 
 /* Hover-Stücke */
@@ -79,25 +102,8 @@
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    z-index: 20;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
     /* Position wird in JavaScript dynamisch berechnet */
-}
-
-/* Verbesserte Animation für fallendes Spielstück */
-@keyframes dropPiece {
-    0% {
-        transform: translateY(-400%);
-    }
-    70% {
-        transform: translateY(10%);
-    }
-    85% {
-        transform: translateY(-5%);
-    }
-    100% {
-        transform: translateY(0);
-    }
 }
 
 /* Gewinnzellen hervorheben */
