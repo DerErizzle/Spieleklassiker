@@ -10,6 +10,7 @@ const debug = require('./debug-utils');
 
 // Spielehandler importieren
 const connectFourHandler = require('./game-handlers/connect-four-handler');
+const sevensHandler = require('./game-handlers/sevens-handler');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,6 +24,7 @@ const io = socketIo(server, {
 
 // Spieltypen registrieren
 gameManager.registerGame('vier-gewinnt', connectFourHandler);
+gameManager.registerGame('kartendomino', sevensHandler);
 
 // Statische Dateien bereitstellen
 app.use(express.static(path.join(__dirname, '..')));
@@ -195,6 +197,34 @@ io.on('connection', (socket) => {
     // Raum verlassen
     socket.on('leaveRoom', (data) => {
         gameManager.leaveRoom(data.roomCode, socket);
+    });
+    
+    // Spiel mit Bots starten (für Kartendomino)
+    socket.on('startGame', (data) => {
+        const { roomCode } = data;
+        
+        if (!gameManager.rooms[roomCode]) {
+            debug.log('Spielstart-Anfrage für nicht existierenden Raum:', { roomCode });
+            return;
+        }
+        
+        const room = gameManager.rooms[roomCode];
+        
+        // Prüfen, ob der Spieler der Host ist
+        const player = room.players.find(p => p.id === socket.id);
+        if (!player || !player.isHost) {
+            debug.log('Spielstart-Anfrage von Nicht-Host-Spieler:', { 
+                roomCode, 
+                username: player ? player.username : 'Unbekannt'
+            });
+            return;
+        }
+        
+        // Prüfen, ob der Handler eine startGame-Methode hat
+        if (room.handler && room.handler.startGame) {
+            debug.log('Starte Spiel mit Bots:', { roomCode });
+            room.handler.startGame(io, roomCode, room);
+        }
     });
     
     // Verbindungsabbruch

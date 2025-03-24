@@ -1,0 +1,286 @@
+:root {
+    --board-color: #1a7c2b;
+    --active-turn-color: #27ae60;
+    --inactive-turn-color: #7f8c8d;
+    --warning-color: #f39c12;
+    --card-width: 80px;
+    --card-height: 120px;
+    --card-border-radius: 8px;
+    --opponent-card-width: 40px;
+    --opponent-card-height: 60px;
+}
+
+.game-table {
+    background-color: var(--board-color);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 700px;
+    position: relative;
+}
+
+/* Gegner-Bereich */
+.opponents-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.opponent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 10px;
+}
+
+.opponent-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.opponent-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.opponent-pass-count {
+    font-size: 12px;
+}
+
+.opponent-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+.opponent-card {
+    width: var(--opponent-card-width);
+    height: var(--opponent-card-height);
+    background-image: url('https://erizzle-games-assets.s3.us-east-2.amazonaws.com/games/kartendomino/card-back.png');
+    background-size: cover;
+    border-radius: var(--card-border-radius);
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Spielfeld */
+.game-board {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    margin: 20px 0;
+    min-height: 300px;
+}
+
+.suit-row {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.suit-label {
+    font-size: 30px;
+    font-weight: bold;
+    color: white;
+    margin-right: 15px;
+    width: 30px;
+    text-align: center;
+}
+
+.suit-label.red {
+    color: #e74c3c;
+}
+
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 60px;
+    align-items: center;
+}
+
+/* Spielerkarten */
+.player-hand-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    position: relative;
+    min-height: 150px;
+}
+
+.player-hand {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.card {
+    width: var(--card-width);
+    height: var(--card-height);
+    border-radius: var(--card-border-radius);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    background-color: white;
+    background-size: cover;
+    cursor: pointer;
+    position: relative;
+}
+
+.card.playable:hover {
+    transform: translateY(-10px);
+    box-shadow: 2px 8px 8px rgba(0, 0, 0, 0.4);
+}
+
+.card.not-playable {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.board-card {
+    width: var(--card-width);
+    height: var(--card-height);
+    border-radius: var(--card-border-radius);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    background-color: white;
+    background-size: cover;
+    margin: 0 2px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.pass-counter {
+    position: absolute;
+    right: 20px;
+    top: -30px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.game-status {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 15px 0;
+    height: 30px;
+}
+
+.your-turn {
+    color: var(--active-turn-color);
+    animation: highlight 1.5s infinite;
+}
+
+.not-your-turn {
+    color: var(--inactive-turn-color);
+}
+
+.connection-status {
+    background-color: var(--warning-color);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin: 15px 0;
+    font-weight: bold;
+    display: none;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    width: 80%;
+    max-width: 500px;
+    text-align: center;
+}
+
+.ranking-list {
+    margin: 20px 0;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.ranking-item.winner {
+    background-color: #f1c40f;
+    font-weight: bold;
+}
+
+#close-modal-button {
+    margin-top: 15px;
+}
+
+@keyframes highlight {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    :root {
+        --card-width: 60px;
+        --card-height: 90px;
+        --opponent-card-width: 30px;
+        --opponent-card-height: 45px;
+    }
+    
+    .game-table {
+        padding: 10px;
+        min-height: 600px;
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --card-width: 50px;
+        --card-height: 75px;
+        --opponent-card-width: 25px;
+        --opponent-card-height: 38px;
+    }
+    
+    .game-table {
+        padding: 5px;
+        min-height: 500px;
+    }
+    
+    .suit-label {
+        font-size: 20px;
+        margin-right: 5px;
+    }
+}

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="sevens.title">Kartendomino - Erizzle Games</title>
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span data-i18n="common.websiteName">Erizzle Games</span>: 
+                    <span data-i18n="sevens.title">Kartendomino</span>
+                </div>
+                <div class="user-info">
+                    <span id="username-display"></span>
+                    <div class="user-color" id="user-color-display"></div>
+                    <button id="back-button" data-i18n="common.backToGames">Zurück zur Übersicht</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="game-container">
+            <div class="game-info-panel">
+                <div class="player-list" id="player-list">
+                    <!-- Spielerliste wird dynamisch befüllt -->
+                </div>
+                <div class="game-status" id="game-status" data-i18n="sevens.waitingForPlayers">Warte auf Spieler...</div>
+                <div class="connection-status" id="connection-status" data-i18n="sevens.connectionLost">
+                    Ein Spieler hat die Verbindung verloren...
+                </div>
+                <div class="room-code">
+                    <span data-i18n="common.roomCode">Raumcode</span>: 
+                    <span id="room-code-display"></span>
+                </div>
+            </div>
+            
+            <div id="start-game-container" style="margin-top: 20px; display: none;">
+                <button id="start-game-button" data-i18n="sevens.startWithBots">Spiel mit Bots starten</button>
+            </div>
+            
+            <div class="game-table" id="game-table">
+                <!-- Spieler oben (Gegner) -->
+                <div class="opponents-container">
+                    <div class="opponent" id="opponent-left">
+                        <div class="opponent-info">
+                            <span class="opponent-name"></span>
+                            <span class="opponent-pass-count"></span>
+                        </div>
+                        <div class="opponent-cards"></div>
+                    </div>
+                    <div class="opponent" id="opponent-top">
+                        <div class="opponent-info">
+                            <span class="opponent-name"></span>
+                            <span class="opponent-pass-count"></span>
+                        </div>
+                        <div class="opponent-cards"></div>
+                    </div>
+                    <div class="opponent" id="opponent-right">
+                        <div class="opponent-info">
+                            <span class="opponent-name"></span>
+                            <span class="opponent-pass-count"></span>
+                        </div>
+                        <div class="opponent-cards"></div>
+                    </div>
+                </div>
+                
+                <!-- Spielfeld -->
+                <div class="game-board" id="game-board">
+                    <div class="suit-row" id="spades-row">
+                        <div class="suit-label">♠</div>
+                        <div class="cards-container" id="spades-cards"></div>
+                    </div>
+                    <div class="suit-row" id="clubs-row">
+                        <div class="suit-label">♣</div>
+                        <div class="cards-container" id="clubs-cards"></div>
+                    </div>
+                    <div class="suit-row" id="hearts-row">
+                        <div class="suit-label">♥</div>
+                        <div class="cards-container" id="hearts-cards"></div>
+                    </div>
+                    <div class="suit-row" id="diamonds-row">
+                        <div class="suit-label">♦</div>
+                        <div class="cards-container" id="diamonds-cards"></div>
+                    </div>
+                </div>
+                
+                <!-- Spieler unten (Eigene Hand) -->
+                <div class="player-hand-container">
+                    <div class="player-hand" id="player-hand"></div>
+                    <div class="action-buttons" id="action-buttons">
+                        <button id="pass-button" data-i18n="sevens.pass">Passen</button>
+                        <button id="surrender-button" data-i18n="sevens.surrender">Aufgeben</button>
+                    </div>
+                    <div class="pass-counter" id="pass-counter">
+                        <span data-i18n="sevens.passCount">Gepasst</span>: <span id="pass-count">0</span>/3
+                    </div>
+                </div>
+            </div>
+            
+            <div id="game-controls" style="margin-top: 20px; display: none;">
+                <button id="restart-button" data-i18n="sevens.newGame">Neues Spiel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Spielende-Modal -->
+    <div class="modal" id="game-over-modal">
+        <div class="modal-content">
+            <h2 data-i18n="sevens.gameOver">Spiel beendet</h2>
+            <div id="winner-message"></div>
+            <div class="ranking-list" id="ranking-list"></div>
+            <button id="close-modal-button" data-i18n="sevens.close">Schließen</button>
+        </div>
+    </div>
+
+    <script src="../../js/cookies.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/i18n.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="../../js/webSocket.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
