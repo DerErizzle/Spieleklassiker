@@ -104,6 +104,7 @@
     gap: 5px;
     min-height: 60px;
     align-items: center;
+    justify-content: center;
 }
 
 /* Spielerkarten */

@@ -98,6 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
     passButton.disabled = true;
     surrenderButton.disabled = true;
     
+    // Spielbrett initial rendern
+    renderBoard();
+    
     // Herzfarbe für rote Symbole
     document.querySelector('#hearts-row .suit-label').classList.add('red');
     document.querySelector('#diamonds-row .suit-label').classList.add('red');
@@ -148,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function updateActionButtons() {
         const isCurrentPlayer = currentPlayerUsername === username;
-        const canPass = !canPlayerPlayCards(board, hand) && passCount < 3;
+        const canPass = passCount < 3; // Immer erlaubt wenn noch Pässe übrig
         const canSurrender = !canPlayerPlayCards(board, hand) && passCount >= 3;
         
         passButton.disabled = !isCurrentPlayer || !canPass || !gameActive || gameOver;
@@ -544,6 +547,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (data.type === 'pass' && data.player === username) {
             passCount = data.passCount;
+        } else if (data.type === 'play' && data.player === username) {
+            // Entferne die gespielte Karte aus der Hand
+            const playedCard = data.card;
+            hand = hand.filter(card => 
+                !(card.suit === playedCard.suit && card.value === playedCard.value)
+            );
         }
         
         renderBoard();

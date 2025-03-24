@@ -17,10 +17,10 @@ const SevensHandler = {
      */
     initializeGameState() {
         const deck = this.createDeck();
-        const shuffledDeck = this.shuffleDeck(deck);
         
-        // Die Siebenen herausnehmen
-        const sevens = this.extractSevens(shuffledDeck);
+        // Entferne die Siebenen vor dem Mischen
+        const deckWithoutSevens = deck.filter(card => card.value !== 7);
+        const shuffledDeck = this.shuffleDeck(deckWithoutSevens);
         
         // Spielstatus
         return {
@@ -78,10 +78,21 @@ const SevensHandler = {
     },
     
     /**
-     * Entfernt die Siebenen aus dem Deck
+     * Sortiert Karten nach Farbe und Wert für die Hand eines Spielers
+     * @param {Array} cards - Zu sortierende Karten
+     * @returns {Array} - Sortierte Karten
      */
-    extractSevens(deck) {
-        return deck.filter(card => card.value !== 7);
+    sortCards(cards) {
+        const suitOrder = { 'spades': 0, 'clubs': 1, 'hearts': 2, 'diamonds': 3 };
+        
+        return [...cards].sort((a, b) => {
+            // Zuerst nach Farbe sortieren
+            if (suitOrder[a.suit] !== suitOrder[b.suit]) {
+                return suitOrder[a.suit] - suitOrder[b.suit];
+            }
+            // Dann nach Wert sortieren
+            return a.value - b.value;
+        });
     },
     
     /**
@@ -97,7 +108,8 @@ const SevensHandler = {
                     hand.push(gameState.deck.pop());
                 }
             }
-            playerHands.push(hand);
+            // Sortiere die Hand nach Farbe und Wert
+            playerHands.push(this.sortCards(hand));
         }
         
         return playerHands;
@@ -314,17 +326,7 @@ const SevensHandler = {
             return false;
         }
         
-        // Prüfen, ob der Spieler überhaupt passen muss (oder ob er spielen könnte)
-        const hand = room.gameState.playerHands[playerIndex];
-        if (this.canPlayerPlayCards(room.gameState.board, hand)) {
-            debug.log('Spieler könnte Karten spielen, aber will passen:', {
-                roomCode,
-                username: room.players[playerIndex].username
-            });
-            return false;
-        }
-        
-        // Pass-Zähler erhöhen
+        // Pass-Zähler erhöhen (erlaubt taktisches Passen)
         room.gameState.passCount[playerIndex]++;
         
         debug.log('Spieler passt:', {
