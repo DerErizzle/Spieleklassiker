@@ -31,6 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const restartButton = document.getElementById('restart-button');
     const gameControls = document.getElementById('game-controls');
     
+    // Debug-Bereich hinzufügen (optional)
+    const debugArea = document.createElement('div');
+    debugArea.id = 'debug-area';
+    debugArea.style.display = 'none'; // Auf 'block' setzen, um Debug-Ausgabe zu sehen
+    debugArea.style.maxHeight = '200px';
+    debugArea.style.overflow = 'auto';
+    debugArea.style.border = '1px solid #ccc';
+    debugArea.style.padding = '10px';
+    debugArea.style.marginTop = '20px';
+    document.querySelector('.game-container').appendChild(debugArea);
+    
     // Benutzerdaten anzeigen
     usernameDisplayEl.textContent = username;
     userColorDisplayEl.style.backgroundColor = userColor;
@@ -86,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Hover-Stück erstellen
         hoverPiece = document.createElement('div');
-        hoverPiece.className = 'column-hover';
+        hoverPiece.className = 'hover-piece';
         hoverPiece.style.display = 'none';
         hoverPiece.style.backgroundColor = userColor;
         boardEl.appendChild(hoverPiece);
@@ -120,6 +131,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spielstein setzen
     function placePiece(row, column, playerUsername, playerColor) {
+        if (row === null || column === null) return;
+        
         const cell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${column}"]`);
         
         if (cell) {
@@ -143,6 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spieler-Liste aktualisieren
     function updatePlayerList(playersList) {
+        console.log("Aktualisiere Spielerliste:", playersList);
         playerListEl.innerHTML = '';
         
         playersList.forEach(player => {
@@ -224,41 +238,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event-Listener für Socket.io-Ereignisse
-    gameSocket.connect();
     
-    // Beim ersten Laden
+    // Bei erfolgreicher Socket-Verbindung
     gameSocket.on('connect', () => {
+        console.log('Socket verbunden, trete Raum bei:', roomCode, username, userColor);
         // Raum beitreten
         gameSocket.joinRoom(roomCode, username, userColor);
     });
     
     // Spieler betritt den Raum
     gameSocket.on('playerJoined', (data) => {
+        console.log('Spieler beigetreten Event empfangen:', data);
         players = data.players;
         
         // Spieleranzahl prüfen (Vier Gewinnt benötigt genau 2 Spieler)
         const wasActive = gameActive;
         gameActive = players.length === 2;
         
-        // Ersten Spieler als aktiven Spieler setzen
+        // Ersten Spieler als aktiven Spieler setzen, falls noch nicht geschehen
         if (gameActive && !currentPlayerUsername) {
             currentPlayerUsername = players[0].username;
         }
         
-        // Wenn das Spiel jetzt aktiv ist, aber vorher nicht war
-        // (d.h. der zweite Spieler ist gerade beigetreten)
-        if (gameActive && !wasActive) {
-            // Aktualisiere den Spielstatus
-            updatePlayerList(players);
-            updateGameStatus();
-        } else {
-            updatePlayerList(players);
-            updateGameStatus();
-        }
+        // Aktualisiere UI
+        updatePlayerList(players);
+        updateGameStatus();
     });
     
     // Spieler verlässt den Raum
     gameSocket.on('playerLeft', (data) => {
+        console.log('Spieler verlassen Event empfangen:', data);
         players = data.players;
         currentPlayerUsername = data.currentPlayer;
         
@@ -271,7 +280,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spielzug aktualisieren
     gameSocket.on('moveUpdate', (data) => {
-        placePiece(data.row, data.column, data.player.username, data.player.color);
+        console.log('Spielzug-Update empfangen:', data);
+        
+        if (data.player) {
+            placePiece(data.row, data.column, data.player.username, data.player.color);
+        }
+        
         currentPlayerUsername = data.nextPlayer;
         gameBoard = data.gameState.board;
         
@@ -281,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spielende
     gameSocket.on('gameOver', (data) => {
+        console.log('Spielende empfangen:', data);
         gameActive = false;
         
         if (data.winner) {
@@ -303,12 +318,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spielneustart
     gameSocket.on('gameRestarted', (data) => {
+        console.log('Spielneustart empfangen:', data);
         resetGame();
         gameBoard = data.gameState.board;
         currentPlayerUsername = data.currentPlayer;
         
         updatePlayerList(players);
         updateGameStatus();
+    });
+    
+    // Fehler beim Beitreten
+    gameSocket.on('joinError', (error) => {
+        console.error('Fehler beim Beitreten zum Raum:', error);
+        alert('Fehler: ' + error);
+        window.location.href = '../../index.html';
     });
     
     // Button-Event-Listener
@@ -329,4 +352,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Spielbrett initialisieren
     initializeBoard();
     updateGameStatus();
+    
+    // DEBUG: Status anzeigen
+    console.log('Spielseite geladen', {
+        roomCode,
+        username,
+        userColor
+    });
 });

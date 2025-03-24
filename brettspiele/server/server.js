@@ -13,6 +13,16 @@ const io = socketIo(server, {
     }
 });
 
+// Debug-Modus (auf true setzen für mehr Logging)
+const DEBUG = true;
+
+// Debug-Logging-Funktion
+function debugLog(message, data = {}) {
+    if (DEBUG) {
+        console.log(`[DEBUG] ${message}`, data);
+    }
+}
+
 // Statische Dateien bereitstellen
 app.use(express.static(path.join(__dirname, '..')));
 
@@ -31,12 +41,14 @@ function generateRoomCode() {
 
 // Socket.io-Verbindungshandler
 io.on('connection', (socket) => {
-    console.log('Neuer Benutzer verbunden:', socket.id);
+    debugLog('Neuer Benutzer verbunden:', { socketId: socket.id });
     
     // Raum erstellen
     socket.on('createRoom', (data) => {
         const roomCode = generateRoomCode();
         const { gameType, username, userColor } = data;
+        
+        debugLog('Raum wird erstellt:', { roomCode, gameType, username, socketId: socket.id });
         
         // Raum erstellen
         rooms[roomCode] = {
@@ -60,34 +72,81 @@ io.on('connection', (socket) => {
             gameType
         });
         
-        console.log(`Raum erstellt: ${roomCode} für Spiel ${gameType}`);
+        debugLog(`Raum erstellt: ${roomCode} für Spiel ${gameType}`);
     });
     
     // Raum beitreten
     socket.on('joinRoom', (data) => {
         const { roomCode, username, userColor } = data;
         
+        debugLog('Raumbeitrittsanfrage:', { roomCode, username, socketId: socket.id });
+        
         // Überprüfen, ob der Raum existiert
         if (!rooms[roomCode]) {
+            debugLog('Raum existiert nicht:', { roomCode });
             socket.emit('joinError', 'Der Raum existiert nicht.');
+            return;
+        }
+        
+        // Überprüfen, ob der Spieler bereits im Raum ist
+        const existingPlayerIndex = rooms[roomCode].players.findIndex(p => p.username === username);
+        if (existingPlayerIndex >= 0) {
+            // Spieler ist bereits im Raum - Socket-ID aktualisieren und nicht duplizieren
+            debugLog('Spieler bereits im Raum, aktualisiere Socket-ID', { 
+                username, 
+                oldSocketId: rooms[roomCode].players[existingPlayerIndex].id, 
+                newSocketId: socket.id 
+            });
+            
+            rooms[roomCode].players[existingPlayerIndex].id = socket.id;
+            
+            // Socket tritt dem Raum bei
+            socket.join(roomCode);
+            
+            // Bestätigung an den Client senden
+            socket.emit('joinSuccess', {
+                roomCode,
+                gameType: rooms[roomCode].gameType
+            });
+            
+            // Spielerliste an alle Spieler im Raum senden
+            io.to(roomCode).emit('playerJoined', {
+                player: {
+                    username,
+                    color: userColor,
+                    isHost: rooms[roomCode].players[existingPlayerIndex].isHost
+                },
+                players: rooms[roomCode].players.map(p => ({
+                    username: p.username,
+                    color: p.color,
+                    isHost: p.isHost
+                }))
+            });
+            
+            if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length === 2) {
+                io.to(roomCode).emit('moveUpdate', {
+                    column: null,
+                    row: null,
+                    player: null,
+                    nextPlayer: rooms[roomCode].players[0].username,
+                    gameState: rooms[roomCode].gameState
+                });
+            }
+            
             return;
         }
         
         // Überprüfen, ob der Raum voll ist (bei 4 Gewinnt max. 2 Spieler)
         if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length >= 2) {
+            debugLog('Raum ist voll (Vier Gewinnt):', { roomCode, playerCount: rooms[roomCode].players.length });
             socket.emit('joinError', 'Der Raum ist voll.');
             return;
         }
         
         // Für andere Spiele (max. 4 Spieler)
         if (rooms[roomCode].players.length >= 4) {
+            debugLog('Raum ist voll (max 4 Spieler):', { roomCode, playerCount: rooms[roomCode].players.length });
             socket.emit('joinError', 'Der Raum ist voll.');
-            return;
-        }
-        
-        // Überprüfen, ob der Benutzername bereits im Raum ist
-        if (rooms[roomCode].players.some(player => player.username === username)) {
-            socket.emit('joinError', 'Dieser Benutzername wird bereits verwendet.');
             return;
         }
         
@@ -101,6 +160,13 @@ io.on('connection', (socket) => {
         
         // Socket tritt dem Raum bei
         socket.join(roomCode);
+        
+        debugLog('Spieler tritt Raum bei:', { 
+            roomCode, 
+            username, 
+            playerCount: rooms[roomCode].players.length,
+            allPlayers: rooms[roomCode].players.map(p => p.username)
+        });
         
         // Bestätigung an den Client senden
         socket.emit('joinSuccess', {
@@ -123,6 +189,7 @@ io.on('connection', (socket) => {
         });
 
         if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length === 2) {
+            debugLog('Spiel startet (2 Spieler im Raum):', { roomCode });
             io.to(roomCode).emit('moveUpdate', {
                 column: null,
                 row: null,
@@ -131,27 +198,49 @@ io.on('connection', (socket) => {
                 gameState: rooms[roomCode].gameState
             });
         }
-        
-        console.log(`Spieler ${username} trat Raum ${roomCode} bei`);
     });
     
     // Spielzug für Vier Gewinnt
     socket.on('makeMove', (data) => {
         const { roomCode, column } = data;
         
-        if (!rooms[roomCode]) return;
+        if (!rooms[roomCode]) {
+            debugLog('Zug in nicht-existierendem Raum:', { roomCode, socketId: socket.id });
+            return;
+        }
         
         const room = rooms[roomCode];
-        const currentPlayer = room.players[room.currentTurn];
+        
+        // Spieler identifizieren
+        const playerIndex = room.players.findIndex(p => p.id === socket.id);
+        if (playerIndex === -1) {
+            debugLog('Spieler nicht im Raum gefunden:', { roomCode, socketId: socket.id });
+            return;
+        }
+        
+        const player = room.players[playerIndex];
         
         // Überprüfen, ob der Spieler am Zug ist
-        if (currentPlayer.id !== socket.id) return;
+        if (playerIndex !== room.currentTurn) {
+            debugLog('Spieler nicht am Zug:', { 
+                roomCode, 
+                username: player.username, 
+                currentTurn: room.currentTurn 
+            });
+            return;
+        }
+        
+        debugLog('Verarbeite Spielzug:', { 
+            roomCode, 
+            username: player.username, 
+            column 
+        });
         
         // Spiellogik basierend auf dem Spieltyp
         if (room.gameType === 'vier-gewinnt') {
             const result = makeVierGewinntMove(room.gameState, column, {
-                username: currentPlayer.username,
-                color: currentPlayer.color
+                username: player.username,
+                color: player.color
             });
             
             if (result.valid) {
@@ -161,13 +250,21 @@ io.on('connection', (socket) => {
                 // Nächster Spieler ist dran
                 room.currentTurn = (room.currentTurn + 1) % room.players.length;
                 
+                debugLog('Gültiger Zug ausgeführt:', {
+                    roomCode,
+                    username: player.username,
+                    column,
+                    row: result.row,
+                    nextPlayerIndex: room.currentTurn
+                });
+                
                 // Alle Spieler über den Zug informieren
                 io.to(roomCode).emit('moveUpdate', {
                     column,
                     row: result.row,
                     player: {
-                        username: currentPlayer.username,
-                        color: currentPlayer.color
+                        username: player.username,
+                        color: player.color
                     },
                     nextPlayer: room.players[room.currentTurn].username,
                     gameState: room.gameState
@@ -175,11 +272,22 @@ io.on('connection', (socket) => {
                 
                 // Überprüfen, ob das Spiel vorbei ist
                 if (result.gameOver) {
+                    debugLog('Spiel ist vorbei:', {
+                        roomCode,
+                        winner: result.winner ? player.username : null
+                    });
+                    
                     io.to(roomCode).emit('gameOver', {
-                        winner: result.winner ? currentPlayer.username : null,
+                        winner: result.winner ? player.username : null,
                         winningCells: result.winningCells || []
                     });
                 }
+            } else {
+                debugLog('Ungültiger Zug:', {
+                    roomCode,
+                    username: player.username,
+                    column
+                });
             }
         }
     });
@@ -188,13 +296,30 @@ io.on('connection', (socket) => {
     socket.on('restartGame', (data) => {
         const { roomCode } = data;
         
-        if (!rooms[roomCode]) return;
+        if (!rooms[roomCode]) {
+            debugLog('Neustart in nicht-existierendem Raum:', { roomCode });
+            return;
+        }
         
         const room = rooms[roomCode];
         
-        // Nur der Host kann das Spiel neu starten
+        // Spieler identifizieren
         const player = room.players.find(p => p.id === socket.id);
-        if (!player || !player.isHost) return;
+        if (!player) {
+            debugLog('Spieler nicht im Raum gefunden:', { roomCode, socketId: socket.id });
+            return;
+        }
+        
+        // Nur der Host kann das Spiel neu starten
+        if (!player.isHost) {
+            debugLog('Nicht-Host versucht Spiel neu zu starten:', { 
+                roomCode, 
+                username: player.username 
+            });
+            return;
+        }
+        
+        debugLog('Spiel wird neu gestartet:', { roomCode, username: player.username });
         
         // Spielstatus zurücksetzen
         room.gameState = initializeGameState(room.gameType);
@@ -210,29 +335,47 @@ io.on('connection', (socket) => {
     // Raum verlassen
     socket.on('leaveRoom', (data) => {
         const { roomCode } = data;
+        debugLog('Spieler verlässt Raum (explizit):', { roomCode, socketId: socket.id });
         handlePlayerDisconnect(socket, roomCode);
     });
     
     // Verbindungsabbruch
     socket.on('disconnect', () => {
-        console.log('Benutzer getrennt:', socket.id);
+        debugLog('Benutzer getrennt:', { socketId: socket.id });
         
         // Alle Räume finden, in denen dieser Spieler ist
         for (const roomCode in rooms) {
-            handlePlayerDisconnect(socket, roomCode);
+            const playerIndex = rooms[roomCode].players.findIndex(p => p.id === socket.id);
+            if (playerIndex !== -1) {
+                debugLog('Spieler verlässt Raum (durch Trennung):', { 
+                    roomCode, 
+                    socketId: socket.id,
+                    username: rooms[roomCode].players[playerIndex].username
+                });
+                handlePlayerDisconnect(socket, roomCode);
+            }
         }
     });
 });
 
 // Funktion zum Behandeln eines Spielerabbruchs
 function handlePlayerDisconnect(socket, roomCode) {
-    if (!rooms[roomCode]) return;
+    if (!rooms[roomCode]) {
+        debugLog('Spielerabbruch in nicht-existierendem Raum:', { roomCode });
+        return;
+    }
     
     const room = rooms[roomCode];
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     
     if (playerIndex !== -1) {
         const player = room.players[playerIndex];
+        
+        debugLog('Entferne Spieler aus Raum:', { 
+            roomCode, 
+            username: player.username, 
+            remainingPlayers: room.players.length - 1 
+        });
         
         // Spieler aus dem Raum entfernen
         room.players.splice(playerIndex, 1);
@@ -242,11 +385,15 @@ function handlePlayerDisconnect(socket, roomCode) {
         
         // Wenn keine Spieler mehr im Raum sind, Raum löschen
         if (room.players.length === 0) {
+            debugLog('Letzter Spieler hat Raum verlassen, lösche Raum:', { roomCode });
             delete rooms[roomCode];
-            console.log(`Raum ${roomCode} gelöscht`);
         } else {
             // Wenn der Host den Raum verlässt, neuen Host bestimmen
             if (player.isHost && room.players.length > 0) {
+                debugLog('Host verlässt Raum, bestimme neuen Host:', { 
+                    roomCode, 
+                    newHost: room.players[0].username 
+                });
                 room.players[0].isHost = true;
             }
             
@@ -256,6 +403,12 @@ function handlePlayerDisconnect(socket, roomCode) {
             }
             
             // Alle verbleibenden Spieler informieren
+            debugLog('Informiere verbleibende Spieler:', { 
+                roomCode, 
+                remainingPlayers: room.players.map(p => p.username),
+                currentPlayer: room.players[room.currentTurn].username 
+            });
+            
             io.to(roomCode).emit('playerLeft', {
                 username: player.username,
                 players: room.players.map(p => ({
@@ -266,8 +419,6 @@ function handlePlayerDisconnect(socket, roomCode) {
                 currentPlayer: room.players[room.currentTurn].username
             });
         }
-        
-        console.log(`Spieler ${player.username} verließ Raum ${roomCode}`);
     }
 }
 
@@ -377,6 +528,32 @@ function checkWin(board, lastRow, lastCol) {
     
     return { win: false, cells: [] };
 }
+
+// Hilfsrouten für Debugging
+if (DEBUG) {
+    // Liste aller Räume als JSON abrufen
+    app.get('/debug/rooms', (req, res) => {
+        const roomInfo = {};
+        for (const roomCode in rooms) {
+            roomInfo[roomCode] = {
+                gameType: rooms[roomCode].gameType,
+                playerCount: rooms[roomCode].players.length,
+                players: rooms[roomCode].players.map(p => ({
+                    username: p.username,
+                    color: p.color,
+                    isHost: p.isHost
+                })),
+                currentTurn: rooms[roomCode].currentTurn
+            };
+        }
+        res.json(roomInfo);
+    });
+}
+
+// Weiterleitung aller anderen Routen zur index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
 
 // Server starten
 const PORT = process.env.PORT || 3000;

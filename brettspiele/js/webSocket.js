@@ -12,17 +12,28 @@ class GameSocketClient {
             playerLeft: [],
             moveUpdate: [],
             gameOver: [],
-            gameRestarted: []
+            gameRestarted: [],
+            roomCreated: [],
+            joinSuccess: [],
+            joinError: []
         };
+        
+        // Verbindung automatisch herstellen
+        this.connect();
     }
     
     // Verbindung herstellen
     connect() {
         if (this.socket) return;
         
+        console.log("Socket.io-Verbindung wird hergestellt...");
+        
         this.socket = io({
             transports: ['polling'],
-            path: '/socket.io'
+            path: '/socket.io',
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
         });
         
         // Standard-Ereignisbehandlung
@@ -31,30 +42,59 @@ class GameSocketClient {
             this._triggerCallback('connect');
         });
         
-        this.socket.on('disconnect', () => {
-            console.log('Verbindung zum Server getrennt');
+        this.socket.on('connect_error', (error) => {
+            console.error('Verbindungsfehler:', error);
+        });
+        
+        this.socket.on('disconnect', (reason) => {
+            console.log('Verbindung zum Server getrennt:', reason);
             this._triggerCallback('disconnect');
         });
         
         this.socket.on('playerJoined', (data) => {
+            console.log('Spieler beigetreten:', data);
             this._triggerCallback('playerJoined', data);
         });
         
         this.socket.on('playerLeft', (data) => {
+            console.log('Spieler hat verlassen:', data);
             this._triggerCallback('playerLeft', data);
         });
         
         this.socket.on('moveUpdate', (data) => {
+            console.log('Spielzug-Update:', data);
             this._triggerCallback('moveUpdate', data);
         });
         
         this.socket.on('gameOver', (data) => {
+            console.log('Spiel beendet:', data);
             this._triggerCallback('gameOver', data);
         });
         
         this.socket.on('gameRestarted', (data) => {
+            console.log('Spiel neugestartet:', data);
             this._triggerCallback('gameRestarted', data);
         });
+        
+        this.socket.on('roomCreated', (data) => {
+            console.log('Raum erstellt:', data);
+            this._triggerCallback('roomCreated', data);
+        });
+        
+        this.socket.on('joinSuccess', (data) => {
+            console.log('Raumbeitritt erfolgreich:', data);
+            this._triggerCallback('joinSuccess', data);
+        });
+        
+        this.socket.on('joinError', (data) => {
+            console.error('Raumbeitritt fehlgeschlagen:', data);
+            this._triggerCallback('joinError', data);
+        });
+    }
+    
+    // Prüfen, ob Socket verbunden ist
+    isConnected() {
+        return this.socket && this.socket.connected;
     }
     
     // Ereignisbehandlung registrieren
@@ -68,13 +108,24 @@ class GameSocketClient {
     // Ereignisbehandlung auslösen
     _triggerCallback(event, data) {
         if (this.callbacks[event]) {
-            this.callbacks[event].forEach(callback => callback(data));
+            this.callbacks[event].forEach(callback => {
+                try {
+                    callback(data);
+                } catch (error) {
+                    console.error(`Fehler beim Ausführen des Event-Handlers für ${event}:`, error);
+                }
+            });
         }
     }
     
     // Raum erstellen
     createRoom(gameType, username, userColor) {
-        if (!this.socket) return;
+        if (!this.isConnected()) {
+            console.error("Kann keinen Raum erstellen: Keine Verbindung zum Server");
+            return;
+        }
+        
+        console.log('Erstelle Raum:', { gameType, username, userColor });
         
         this.socket.emit('createRoom', {
             gameType,
@@ -85,7 +136,12 @@ class GameSocketClient {
     
     // Raum beitreten
     joinRoom(roomCode, username, userColor) {
-        if (!this.socket) return;
+        if (!this.isConnected()) {
+            console.error("Kann keinem Raum beitreten: Keine Verbindung zum Server");
+            return;
+        }
+        
+        console.log('Trete Raum bei:', { roomCode, username, userColor });
         
         this.socket.emit('joinRoom', {
             roomCode,
@@ -96,7 +152,10 @@ class GameSocketClient {
     
     // Spielzug ausführen
     makeMove(roomCode, column) {
-        if (!this.socket) return;
+        if (!this.isConnected()) {
+            console.error("Kann keinen Zug ausführen: Keine Verbindung zum Server");
+            return;
+        }
         
         this.socket.emit('makeMove', {
             roomCode,
@@ -106,7 +165,10 @@ class GameSocketClient {
     
     // Spiel neu starten
     restartGame(roomCode) {
-        if (!this.socket) return;
+        if (!this.isConnected()) {
+            console.error("Kann Spiel nicht neu starten: Keine Verbindung zum Server");
+            return;
+        }
         
         this.socket.emit('restartGame', {
             roomCode
@@ -115,7 +177,10 @@ class GameSocketClient {
     
     // Raum verlassen
     leaveRoom(roomCode) {
-        if (!this.socket) return;
+        if (!this.isConnected()) {
+            console.error("Kann Raum nicht verlassen: Keine Verbindung zum Server");
+            return;
+        }
         
         this.socket.emit('leaveRoom', {
             roomCode
