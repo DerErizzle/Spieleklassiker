@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let activePlayerColor = userColor; // Tatsächliche Spielerfarbe (kann bei Konflikt geändert werden)
     let animationRunning = false; // Verhindert mehrere gleichzeitige Animationen
     let hoverRowEl = null;
+    let lastHoverColumn = null; // Verfolgt den letzten Hover-Zustand
     
     // Spielbrett initialisieren (verbessert)
     function initializeBoard() {
@@ -106,11 +107,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Hitboxes für Spalten hinzufügen
+        addColumnHitboxes();
+    }
+    
+    // Verbesserte Spalten-Hitboxen mit exakten Positionierungen
+    function addColumnHitboxes() {
+        // Vorhandene Hitboxes entfernen (falls vorhanden)
+        const existingHitboxes = boardEl.querySelectorAll('.column-hitbox');
+        existingHitboxes.forEach(hitbox => hitbox.remove());
+        
+        // Neue Hitboxes mit exakten Positionierungen hinzufügen
         for (let col = 0; col < 7; col++) {
             const hitbox = document.createElement('div');
             hitbox.className = 'column-hitbox';
             hitbox.dataset.column = col;
-            hitbox.style.left = (col * 84) + 'px'; // 70px Zelle + 14px Margin
+            
+            // Exakte Positionierung (mittig über jeder Spalte)
+            const cellWidth = 84; // 70px Zelle + 14px Margin
+            hitbox.style.left = col * cellWidth + 'px';
+            hitbox.style.width = cellWidth + 'px';
             
             // Event-Listener für die Hitbox
             hitbox.addEventListener('click', () => {
@@ -120,7 +135,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             hitbox.addEventListener('mouseover', () => {
-                if (gameActive && currentPlayerUsername === username) {
+                lastHoverColumn = col;
+                if (gameActive && currentPlayerUsername === username && !animationRunning) {
                     showHoverPiece(col);
                     // Sende hover-Information an andere Spieler
                     sendHoverUpdate(col);
@@ -128,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             hitbox.addEventListener('mouseout', () => {
+                lastHoverColumn = null;
                 if (gameActive && currentPlayerUsername === username) {
                     hideHoverPiece();
                     // Informiere Spieler, dass der Hover beendet wurde
@@ -171,10 +188,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Hover-Stück anzeigen (verbessert)
     function showHoverPiece(column) {
-        if (!hoverPiece || !gameActive) return;
+        if (!hoverPiece || !gameActive || animationRunning) return;
         
-        // Berechne die Position basierend auf der Spalte
-        const cellWidth = 84; // 70px Breite + 14px Margin (7px auf jeder Seite)
+        // Keine Anzeige wenn der Spieler nicht am Zug ist
+        if (currentPlayerUsername !== username) {
+            hideHoverPiece();
+            return;
+        }
+        
+        // Exakte Position berechnen (mittig in der Spalte)
+        const cellWidth = 84; // 70px Breite + 14px Margin
         const leftPosition = column * cellWidth + 7; // +7px für den linken Rand
         
         hoverPiece.style.display = 'block';
@@ -206,6 +229,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Funktion zum Verstecken des gegnerischen Hover-Effekts
+    function hideOpponentHoverPiece() {
+        if (opponentHoverPiece) {
+            opponentHoverPiece.style.display = 'none';
+        }
+    }
+    
+    // Helferfunktion zur Aktualisierung der Hover-Sichtbarkeit basierend auf dem Spielzustand
+    function updateHoverVisibility() {
+        if (gameActive && currentPlayerUsername === username && !animationRunning) {
+            // Wenn der Mauszeiger über einer Spalte ist, den Hover-Effekt dort anzeigen
+            const column = lastHoverColumn;
+            if (column !== null) {
+                showHoverPiece(column);
+            }
+        } else {
+            hideHoverPiece();
+        }
+    }
+    
     // Spielzug in einer Spalte
     function makeMoveInColumn(column) {
         gameSocket.makeMove(roomCode, column);
@@ -217,7 +260,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         animationRunning = true;
         
-        // Berechne die Position
+        // Hover-Effekt verstecken während der Animation
+        hideHoverPiece();
+        hideOpponentHoverPiece();
+        
+        // Berechne die Position (mittig zentriert)
         const cellWidth = 84; // 70px Breite + 14px Margin
         const leftPosition = column * cellWidth + 7; // +7px für den linken Rand
         
@@ -233,7 +280,10 @@ document.addEventListener('DOMContentLoaded', function() {
         animatedPiece.className = 'animation-placeholder';
         animatedPiece.style.backgroundColor = playerColor;
         animatedPiece.style.left = leftPosition + 'px';
-        animatedPiece.style.top = '-70px'; // Startposition über dem Brett
+        
+        // Starte die Animation von der Position der Hover-Reihe aus
+        const hoverRowTop = hoverRowEl.getBoundingClientRect().top - boardEl.getBoundingClientRect().top;
+        animatedPiece.style.top = hoverRowTop + 'px';
         
         // Füge den animierten Stein dem Spielbrett hinzu
         boardEl.appendChild(animatedPiece);
@@ -248,13 +298,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Starte die Animation nach einem kurzen Delay
         setTimeout(() => {
-            animatedPiece.style.transform = `translateY(${targetTop}px)`;
+            animatedPiece.style.transform = `translateY(${targetTop - hoverRowTop}px)`;
             
             // Nach Abschluss der Animation den animierten Stein entfernen und die Zielzelle einfärben
             setTimeout(() => {
                 boardEl.removeChild(animatedPiece);
                 targetCell.style.backgroundColor = playerColor;
                 animationRunning = false;
+                
+                // Hover-Effekt wieder anzeigen, falls der Spieler am Zug ist
+                updateHoverVisibility();
             }, 600); // Entspricht der Animationsdauer in CSS
         }, 50);
     }
@@ -439,6 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateBoardDisplay();
             updatePlayerList(players);
             updateGameStatus();
+            updateHoverVisibility(); // Hover-Effekt basierend auf dem neuen Zustand aktualisieren
         }, 650);
     });
     
