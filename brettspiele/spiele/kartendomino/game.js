@@ -528,6 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function placeMultipleCards(placedCards) {
         if (!placedCards || !placedCards.length) return;
         
+        console.log("Platziere Karten:", placedCards);
+        
         // Karten zum Brett hinzufügen
         placedCards.forEach(card => {
             if (!board[card.suit].includes(card.value)) {
@@ -542,11 +544,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Brett neu rendern
         renderBoard();
-        
-        // Audio-Feedback für Kartenbewegung
-        const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/card-play.mp3'));
-        audio.volume = 0.3;
-        audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
     }
     
     /**
@@ -716,18 +713,11 @@ document.addEventListener('DOMContentLoaded', function() {
             hand = hand.filter(card => 
                 !(card.suit === playedCard.suit && card.value === playedCard.value)
             );
-            
-            // Wenn ich keine Karten mehr habe, bin ich fertig
-            if (hand.length === 0 && !finishedOrder.includes(username)) {
-                // Hier nichts tun, der Server wird die finishedOrder aktualisieren
-            }
         } else if (data.type === 'surrender') {
             // Für den aufgebenden Spieler: Leere die Hand
             if (data.player === username) {
-                // Setze das surrender-Flag
                 surrendered = true;
-                // Wichtig: Leere die Hand erst nachdem placeMultipleCards ausgeführt wurde
-                hand = [];
+                hand = []; // Hand leeren nachdem die Karten platziert wurden
             }
             
             // Platziere die vom Server gesendeten Karten auf dem Brett
@@ -735,13 +725,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 placeMultipleCards(data.placedCards);
             }
             
-            // Aktualisiere die Spielerinformationen
+            // Aktualisiere die Spielerinformation
             const playerObj = players.find(p => p.username === data.player);
             if (playerObj) {
-                // Aktualisiere die verbleibenden Karten
-                playerObj.cardsLeft = data.remainingCards || 0;
+                playerObj.cardsLeft = data.remainingCards;
                 
-                // Aktualisiere den Rang in der finishedOrder
+                // Wichtig: Hier wird der Rang korrekt gesetzt
                 if (data.rank !== undefined) {
                     updateFinishedPlayerInfo(data.player, data.rank);
                 }
@@ -751,7 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderBoard();
         renderPlayerHand();
         
-        // Aktualisiere die Karten-Anzahl und Pass-Zähler der Spieler
+        // Aktualisiere die Karten-Anzahl der Spieler
         if (data.type === 'play') {
             const playerObj = players.find(p => p.username === data.player);
             if (playerObj) {
@@ -760,7 +749,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Wenn der Spieler keine Karten mehr hat, hat er seinen Platz
                 if (data.remainingCards === 0 && !finishedOrder.includes(data.player)) {
                     if (data.rank !== undefined) {
-                        // Stelle sicher, dass die Rangliste aktualisiert wird
                         updateFinishedPlayerInfo(data.player, data.rank);
                     }
                 }
@@ -769,18 +757,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const playerObj = players.find(p => p.username === data.player);
             if (playerObj) {
                 playerObj.passCount = data.passCount;
-            }
-        } else if (data.type === 'surrender') {
-            const playerObj = players.find(p => p.username === data.player);
-            if (playerObj) {
-                // Bei Aufgabe: Aktualisiere die verbleibenden Karten
-                playerObj.cardsLeft = data.remainingCards;
-                
-                if (data.rank !== undefined) {
-                    // Wichtig: Hier wird der Rang korrekt zugewiesen
-                    // Der aufgebende Spieler bekommt den schlechtesten Rang
-                    updateFinishedPlayerInfo(data.player, data.rank);
-                }
             }
         }
         
