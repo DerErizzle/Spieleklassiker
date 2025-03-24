@@ -668,30 +668,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     gameSocket.on('gameStarted', (data) => {
-        console.log('Game started event received:', data);
-
         gameActive = true;
         gameOver = false;
         finishedOrder = [];
         
         players = data.players;
         currentPlayerUsername = data.currentPlayer;
-        board = data.board || {
-            spades: [7],
-            clubs: [7],
-            hearts: [7],
-            diamonds: [7]
-        };
+        board = data.board;
         
+        // Spielfeld anzeigen
         gameTableEl.style.display = 'flex';
         startGameContainer.style.display = 'none';
         
-        setTimeout(() => {
-            renderBoard();
-            updatePlayerList(players);
-            updateGameStatus();
-            renderOpponents();
-        }, 50);
+        // UI aktualisieren
+        renderBoard();
+        updatePlayerList(players);
+        updateGameStatus();
+        renderOpponents();
     });
     
     gameSocket.on('handDealt', (data) => {
