@@ -94,6 +94,10 @@ function generateRoomCode() {
     return code;
 }
 
+function getRandomStartingPlayer() {
+    return Math.floor(Math.random() * 2); // Gibt zufällig 0 oder 1 zurück
+}
+
 // Socket.io-Verbindungshandler
 io.on('connection', (socket) => {
     debugLog('Neuer Benutzer verbunden:', { socketId: socket.id });
@@ -308,11 +312,12 @@ io.on('connection', (socket) => {
 
         if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length === 2) {
             debugLog('Spiel startet (2 Spieler im Raum):', { roomCode });
+            rooms[roomCode].currentTurn = getRandomStartingPlayer();
             io.to(roomCode).emit('moveUpdate', {
                 column: null,
                 row: null,
                 player: null,
-                nextPlayer: rooms[roomCode].players[0].username,
+                nextPlayer: rooms[roomCode].players[rooms[roomCode].currentTurn].username,
                 gameState: rooms[roomCode].gameState
             });
         }
@@ -494,12 +499,12 @@ io.on('connection', (socket) => {
         
         // Spielstatus zurücksetzen
         room.gameState = initializeGameState(room.gameType);
-        room.currentTurn = 0;
+        room.currentTurn = getRandomStartingPlayer();
         
         // Alle Spieler über den Neustart informieren
         io.to(roomCode).emit('gameRestarted', {
             gameState: room.gameState,
-            currentPlayer: room.players[0].username
+            currentPlayer: room.players[room.currentTurn].username
         });
     });
     
