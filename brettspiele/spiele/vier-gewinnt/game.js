@@ -269,10 +269,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const audio = new Audio();
         audio.volume = 0.3;
         
+        // Verwende die Cloudflare CDN URL für die Audio-Dateien
         const audioSources = [
-            `/spiele/vier-gewinnt/assets/sounds/drop_${formattedNumber}.mp3`,
-            `/spiele/vier-gewinnt/assets/sounds/drop_${formattedNumber}.ogg`,
-            `/spiele/vier-gewinnt/assets/sounds/drop_${formattedNumber}.wav`
+            `${getCdnUrl('/games/vier-gewinnt/sounds/drop_' + formattedNumber + '.mp3')}`,
+            `${getCdnUrl('/games/vier-gewinnt/sounds/drop_' + formattedNumber + '.ogg')}`,
+            `${getCdnUrl('/games/vier-gewinnt/sounds/drop_' + formattedNumber + '.wav')}`
         ];
         
         for (const source of audioSources) {
