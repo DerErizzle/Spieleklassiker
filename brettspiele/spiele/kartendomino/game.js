@@ -685,9 +685,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePlayerList(players);
         updateGameStatus();
         renderOpponents();
-        
-        // Sofort den aktuellen Spielstand vom Server anfordern
-        gameSocket.socket.emit('requestGameState', { roomCode });
     });
     
     gameSocket.on('handDealt', (data) => {
