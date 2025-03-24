@@ -1,5 +1,5 @@
 /**
- * Cookie-Funktionen für Geile Games
+ * Cookie-Funktionen für Erizzle Games
  */
 
 // Cookie setzen

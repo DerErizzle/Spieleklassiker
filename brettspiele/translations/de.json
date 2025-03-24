@@ -1,6 +1,6 @@
 {
     "common": {
-      "websiteName": "Geile Games",
+      "websiteName": "Erizzle Games",
       "logout": "Abmelden",
       "back": "Zurück",
       "roomCode": "Raumcode",
@@ -17,12 +17,12 @@
       "backToGames": "Zurück zur Übersicht"
     },
     "header": {
-      "title": "Geile Games",
+      "title": "Erizzle Games",
       "joinRoom": "Raumcode eingeben",
       "roomButton": "Beitreten"
     },
     "login": {
-      "welcome": "Willkommen bei Geile Games",
+      "welcome": "Willkommen bei Erizzle Games",
       "username": "Dein Spielername:",
       "minLength": "Mindestens 3 Zeichen",
       "maxLength": "Maximal 15 Zeichen",

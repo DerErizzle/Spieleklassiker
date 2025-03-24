@@ -1,5 +1,5 @@
 /**
- * Internationalisierungs-Service für Geile Games
+ * Internationalisierungs-Service für Erizzle Games
  */
 
 class I18nService {

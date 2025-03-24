@@ -1,6 +1,6 @@
 {
     "common": {
-      "websiteName": "Awesome Games",
+      "websiteName": "Erizzle Games",
       "logout": "Logout",
       "back": "Back",
       "roomCode": "Room Code",
@@ -17,12 +17,12 @@
       "backToGames": "Back to Overview"
     },
     "header": {
-      "title": "Awesome Games",
+      "title": "Erizzle Games",
       "joinRoom": "Enter room code",
       "roomButton": "Join"
     },
     "login": {
-      "welcome": "Welcome to Awesome Games",
+      "welcome": "Welcome to Erizzle Games",
       "username": "Your player name:",
       "minLength": "At least 3 characters",
       "maxLength": "Maximum 15 characters",
