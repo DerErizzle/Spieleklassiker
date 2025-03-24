@@ -23,10 +23,12 @@
 }
 
 /* Z-Index-Hierarchie für korrekte Überlagerung */
-.game-board .column-hitbox { z-index: 40; } /* Oberste Ebene für Klicks */
-.game-board .animation-layer { z-index: 30; } /* Für Animationen */
-.game-board .hover-row { z-index: 20; } /* Für Hover-Stücke */
-.game-board .board-rows { z-index: 10; } /* Unterste Ebene für das eigentliche Brett */
+.game-board { z-index: 5; position: relative; } /* Brett-Hintergrund (blau) */
+.game-board .column-hitbox { z-index: 50; } /* Oberste Ebene für Klicks */
+.game-board .hover-row { z-index: 40; } /* Für Hover-Stücke */
+.game-board .cell { z-index: 30; } /* Weiße Löcher */
+.game-board .animation-layer { z-index: 20; } /* Für Animationen (hinter dem Brett, vor den Löchern) */
+.game-board .board-rows { z-index: 10; } /* Grundebene des Bretts */
 
 /* Animations-Schicht für fallende Steine */
 .animation-layer {
@@ -139,6 +141,12 @@
     margin: 15px 0;
     font-weight: bold;
     display: none;
+}
+
+/* Spezifische Animation-Positionierung für den "hinter dem Brett" Effekt */
+.animation-placeholder {
+    position: relative;
+    z-index: 20; /* Muss mit dem animation-layer übereinstimmen */
 }
 
 /* Animationen */
