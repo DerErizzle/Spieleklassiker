@@ -293,15 +293,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const boardWidth = boardRowsEl.offsetWidth;
         const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
         
-        // Exakte Position berechnen (präzise mittig in der Spalte)
-        const leftPosition = (column * colWidth) + ((colWidth - CELL_WIDTH) / 2);
-        
-        // Finde die Zielzelle
+        // Präzise mittige Positionierung in der Spalte
+        // Finde die exakte Position der Zielzelle
         const targetCell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${column}"]`);
         if (!targetCell) {
             animationRunning = false;
             return;
         }
+        
+        // Position relativ zum Board berechnen
+        const cellRect = targetCell.getBoundingClientRect();
+        const boardRect = boardEl.getBoundingClientRect();
+        const cellCenterX = cellRect.left + (cellRect.width / 2) - boardRect.left;
+        
+        // Zentriere den animierten Stein genau über der Zielzelle
+        const leftPosition = cellCenterX - (CELL_WIDTH / 2);
         
         // Erstelle den animierten Spielstein
         const animatedPiece = document.createElement('div');

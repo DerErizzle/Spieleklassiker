@@ -90,8 +90,8 @@
     height: 70px;
     border-radius: 50%;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-    z-index: 1; /* Unter den Zellen */
-    /* Position wird in JavaScript dynamisch berechnet */
+    z-index: 1;
+    opacity: 1;
 }
 
 /* Gewinnzellen hervorheben */
