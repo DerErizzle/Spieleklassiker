@@ -9,12 +9,19 @@
     --inactive-turn-color: #7f8c8d;
     --cell-color: white;
     --warning-color: #f39c12;
+    
+    /* Z-Index-Hierarchie für korrekte Darstellung */
+    --z-hitbox: 60;        /* Ganz oben für Klicks */
+    --z-holes: 50;         /* Weiße Löcher */
+    --z-hover: 40;         /* Hover-Effekte */
+    --z-board-front: 30;   /* Vorderseite des Bretts (mit Löchern) */
+    --z-pieces: 20;        /* Fallende Stücke */
+    --z-board-back: 10;    /* Rückseite des Bretts */
 }
 
-/* Spielbrett-Container */
+/* Spielbrett-Container - ohne Hintergrundfarbe, diese wird durch :before gesetzt */
 .game-board {
     display: inline-block;
-    background-color: var(--board-color);
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -22,13 +29,39 @@
     position: relative;
 }
 
-/* Z-Index-Hierarchie für korrekte Überlagerung */
-.game-board { z-index: 5; position: relative; } /* Brett-Hintergrund (blau) */
-.game-board .column-hitbox { z-index: 50; } /* Oberste Ebene für Klicks */
-.game-board .hover-row { z-index: 40; } /* Für Hover-Stücke */
-.game-board .cell { z-index: 30; } /* Weiße Löcher */
-.game-board .animation-layer { z-index: 20; } /* Für Animationen (hinter dem Brett, vor den Löchern) */
-.game-board .board-rows { z-index: 10; } /* Grundebene des Bretts */
+/* Spielbrett strukturieren für korrekten Schichtaufbau */
+.game-board {
+    position: relative;
+    z-index: 0; /* Container */
+}
+.game-board:before {
+    content: '';
+    position: absolute;
+    background-color: var(--board-color);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    z-index: var(--z-board-front);
+}
+.game-board .column-hitbox { 
+    z-index: var(--z-hitbox); 
+} 
+.game-board .hover-row { 
+    z-index: var(--z-hover); 
+}
+.game-board .cell { 
+    z-index: var(--z-holes);
+    position: relative;
+}
+.game-board .animation-layer { 
+    z-index: var(--z-pieces);
+}
+.game-board .board-rows { 
+    z-index: var(--z-board-back);
+    position: relative;
+}
 
 /* Animations-Schicht für fallende Steine */
 .animation-layer {
@@ -106,6 +139,7 @@
     opacity: 1 !important; /* Vollständig undurchsichtig */
     border: none;
     box-shadow: none;
+    z-index: var(--z-pieces);
 }
 
 /* Gewinnzellen hervorheben */
@@ -145,8 +179,8 @@
 
 /* Spezifische Animation-Positionierung für den "hinter dem Brett" Effekt */
 .animation-placeholder {
-    position: relative;
-    z-index: 20; /* Muss mit dem animation-layer übereinstimmen */
+    position: absolute;
+    z-index: var(--z-pieces);
 }
 
 /* Animationen */
