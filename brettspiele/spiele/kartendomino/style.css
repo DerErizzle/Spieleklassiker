@@ -38,7 +38,6 @@
     overflow: hidden;
 }
 
-/* Gegner-Bereich */
 .opponents-container {
     display: flex;
     justify-content: space-between;
@@ -92,7 +91,6 @@
     margin-left: 0;
 }
 
-/* Spielfeld */
 .game-board {
     flex-grow: 1;
     display: flex;
@@ -110,7 +108,6 @@
     width: 100%;
 }
 
-/* Entfernt die Symbol-Labels */
 .suit-label {
     display: none;
 }
@@ -124,7 +121,6 @@
     padding: 0 10px;
 }
 
-/* Card placeholder for fixed positions */
 .card-placeholder {
     width: 100%;
     aspect-ratio: 2/3;
@@ -137,7 +133,6 @@
     margin: 2px;
 }
 
-/* Spielerkarten */
 .player-hand-container {
     display: flex;
     flex-direction: column;
@@ -267,7 +262,6 @@
     display: none;
 }
 
-/* Spieler-Styling */
 .player.finished-player {
     opacity: 0.8;
     background-color: rgba(52, 152, 219, 0.1);
@@ -278,7 +272,6 @@
     background-color: rgba(46, 204, 113, 0.1);
 }
 
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -315,7 +308,6 @@
     border-radius: 5px;
 }
 
-/* Medaillen-Farben für Platzierungen */
 .place-1 {
     background-color: var(--gold-color);
     font-weight: bold;
@@ -336,7 +328,6 @@
     background-color: #f8f9fa;
 }
 
-/* Alter Stil für den Fall, dass wir noch winner nutzen */
 .winner {
     background-color: var(--gold-color);
     font-weight: bold;
@@ -351,7 +342,6 @@
     50% { opacity: 1; }
 }
 
-/* Responsive Design */
 @media (max-width: 900px) {
     :root {
         --card-width: 60px;
@@ -359,7 +349,7 @@
         --opponent-card-width: 30px;
         --opponent-card-height: 45px;
     }
-    
+
     .game-table {
         padding: 10px;
         min-height: 600px;
@@ -373,12 +363,12 @@
         --opponent-card-width: 25px;
         --opponent-card-height: 38px;
     }
-    
+
     .game-table {
         padding: 5px;
         min-height: 500px;
     }
-    
+
     .suit-label {
         font-size: 20px;
         margin-right: 5px;

@@ -12,12 +12,12 @@
             padding: 20px;
             background-color: #f8f9fa;
         }
-        
+
         h1 {
             text-align: center;
             margin-bottom: 20px;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -26,18 +26,18 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
         }
-        
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
-        
+
         .controls {
             margin-bottom: 20px;
         }
-        
+
         button {
             background-color: #3498db;
             color: white;
@@ -47,18 +47,18 @@
             cursor: pointer;
             margin-right: 10px;
         }
-        
+
         button:hover {
             background-color: #2980b9;
         }
-        
+
         .card {
             border: 1px solid #ddd;
             border-radius: 4px;
             padding: 15px;
             margin-bottom: 15px;
         }
-        
+
         .card-header {
             background-color: #f5f5f5;
             padding: 10px;
@@ -66,19 +66,19 @@
             border-bottom: 1px solid #ddd;
             font-weight: bold;
         }
-        
+
         pre {
             background-color: #f8f9fa;
             padding: 10px;
             border-radius: 4px;
             overflow-x: auto;
         }
-        
+
         #roomList {
             list-style: none;
             padding: 0;
         }
-        
+
         #roomList li {
             margin-bottom: 5px;
             padding: 10px;
@@ -86,11 +86,11 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        
+
         #roomList li:hover {
             background-color: #e9ecef;
         }
-        
+
         .console {
             background-color: #343a40;
             color: #f8f9fa;
@@ -100,24 +100,24 @@
             overflow-y: auto;
             margin-bottom: 20px;
         }
-        
+
         .console p {
             margin: 0 0 5px 0;
             font-family: monospace;
         }
-        
+
         .console .info {
             color: #17a2b8;
         }
-        
+
         .console .error {
             color: #dc3545;
         }
-        
+
         .console .success {
             color: #28a745;
         }
-        
+
         .hidden {
             display: none;
         }
@@ -131,38 +131,38 @@
                 <button id="backButton">Zurück zur Startseite</button>
             </div>
         </div>
-        
+
         <div class="controls">
             <button id="refreshRooms">Räume aktualisieren</button>
             <button id="clearConsole">Konsole leeren</button>
         </div>
-        
+
         <div class="card">
             <div class="card-header">Socket-Verbindungsstatus</div>
             <div id="socketStatus">Nicht verbunden</div>
         </div>
-        
+
         <div class="card">
             <div class="card-header">Räume</div>
             <div id="roomCount">Keine Räume vorhanden</div>
             <ul id="roomList"></ul>
         </div>
-        
+
         <div class="card">
             <div class="card-header">Raumdetails</div>
             <div id="roomDetails">Kein Raum ausgewählt</div>
         </div>
-        
+
         <div class="card">
             <div class="card-header">Konsole</div>
             <div class="console" id="console"></div>
         </div>
     </div>
-    
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // DOM-Elemente
+
             const socketStatusEl = document.getElementById('socketStatus');
             const roomCountEl = document.getElementById('roomCount');
             const roomListEl = document.getElementById('roomList');
@@ -171,8 +171,7 @@
             const refreshRoomsBtn = document.getElementById('refreshRooms');
             const clearConsoleBtn = document.getElementById('clearConsole');
             const backButton = document.getElementById('backButton');
-            
-            // Konsole-Funktionen
+
             function log(message, type = 'default') {
                 const logEntry = document.createElement('p');
                 logEntry.className = type;
@@ -180,30 +179,27 @@
                 consoleEl.appendChild(logEntry);
                 consoleEl.scrollTop = consoleEl.scrollHeight;
             }
-            
-            // Socket.io-Verbindung
+
             const socket = io({
                 transports: ['polling']
             });
-            
-            // Socket.io-Event-Listener
+
             socket.on('connect', () => {
                 socketStatusEl.textContent = `Verbunden (Socket ID: ${socket.id})`;
                 socketStatusEl.style.color = 'green';
                 log('Mit dem Server verbunden', 'success');
             });
-            
+
             socket.on('disconnect', () => {
                 socketStatusEl.textContent = 'Nicht verbunden';
                 socketStatusEl.style.color = 'red';
                 log('Verbindung zum Server getrennt', 'error');
             });
-            
+
             socket.on('connect_error', (error) => {
                 log(`Verbindungsfehler: ${error.message}`, 'error');
             });
-            
-            // Alle Räume abrufen
+
             function fetchRooms() {
                 fetch('/debug/rooms')
                     .then(response => response.json())
@@ -214,19 +210,18 @@
                         log(`Fehler beim Abrufen der Räume: ${error}`, 'error');
                     });
             }
-            
-            // Raumliste aktualisieren
+
             function updateRoomsList(rooms) {
                 roomListEl.innerHTML = '';
                 const roomCodes = Object.keys(rooms);
-                
+
                 if (roomCodes.length === 0) {
                     roomCountEl.textContent = 'Keine Räume vorhanden';
                     return;
                 }
-                
+
                 roomCountEl.textContent = `${roomCodes.length} Räume aktiv`;
-                
+
                 roomCodes.forEach(roomCode => {
                     const room = rooms[roomCode];
                     const li = document.createElement('li');
@@ -236,18 +231,17 @@
                     `;
                     li.dataset.roomCode = roomCode;
                     li.dataset.roomData = JSON.stringify(room);
-                    
+
                     li.addEventListener('click', () => {
                         showRoomDetails(room, roomCode);
                     });
-                    
+
                     roomListEl.appendChild(li);
                 });
-                
+
                 log(`${roomCodes.length} Räume geladen`, 'info');
             }
-            
-            // Raumdetails anzeigen
+
             function showRoomDetails(room, roomCode) {
                 const playerInfo = room.players.map(player => {
                     return `<li>
@@ -256,7 +250,7 @@
                         ${player.isHost ? 'Host' : 'Gast'})
                     </li>`;
                 }).join('');
-                
+
                 roomDetailsEl.innerHTML = `
                     <h3>Raum: ${roomCode}</h3>
                     <p><strong>Spieltyp:</strong> ${room.gameType}</p>
@@ -264,27 +258,24 @@
                     <p><strong>Spieler (${room.playerCount}):</strong></p>
                     <ul>${playerInfo}</ul>
                 `;
-                
+
                 log(`Raumdetails für Raum ${roomCode} angezeigt`, 'info');
             }
-            
-            // Event-Listener
+
             refreshRoomsBtn.addEventListener('click', fetchRooms);
-            
+
             clearConsoleBtn.addEventListener('click', () => {
                 consoleEl.innerHTML = '';
                 log('Konsole geleert', 'info');
             });
-            
+
             backButton.addEventListener('click', () => {
                 window.location.href = '/';
             });
-            
-            // Initiale Aktionen
+
             log('Debug-Seite geladen', 'info');
             fetchRooms();
-            
-            // Automatische Aktualisierung alle 5 Sekunden
+
             setInterval(fetchRooms, 5000);
         });
     </script>

@@ -23,12 +23,11 @@
             </div>
         </div>
     </header>
-    
+
     <div class="container">
         <div class="game-container">
             <div class="game-info-panel">
                 <div class="player-list" id="player-list">
-                    <!-- Spielerliste wird dynamisch befüllt -->
                 </div>
                 <div class="game-status" id="game-status" data-i18n="sevens.waitingForPlayers">Warte auf Spieler...</div>
                 <div class="connection-status" id="connection-status" data-i18n="sevens.connectionLost">
@@ -39,13 +38,12 @@
                     <span id="room-code-display"></span>
                 </div>
             </div>
-            
+
             <div id="start-game-container" style="margin-top: 20px; display: none;">
                 <button id="start-game-button" data-i18n="sevens.startWithBots">Spiel mit Bots starten</button>
             </div>
-            
+
             <div class="game-table" id="game-table">
-                <!-- Spieler oben (Gegner) -->
                 <div class="opponents-container">
                     <div class="opponent" id="opponent-left">
                         <div class="opponent-info">
@@ -69,8 +67,7 @@
                         <div class="opponent-cards"></div>
                     </div>
                 </div>
-                
-                <!-- Spielfeld -->
+
                 <div class="game-board" id="game-board">
                     <div class="suit-row" id="spades-row">
                         <div class="cards-container" id="spades-cards"></div>
@@ -85,8 +82,7 @@
                         <div class="cards-container" id="diamonds-cards"></div>
                     </div>
                 </div>
-                
-                <!-- Spieler unten (Eigene Hand) -->
+
                 <div class="player-hand-container">
                     <div class="player-hand" id="player-hand"></div>
                     <div class="action-buttons" id="action-buttons">
@@ -98,14 +94,13 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="game-controls" style="margin-top: 20px; display: none;">
                 <button id="restart-button" data-i18n="sevens.newGame">Neues Spiel</button>
             </div>
         </div>
     </div>
-    
-    <!-- Spielende-Modal -->
+
     <div class="modal" id="game-over-modal">
         <div class="modal-content">
             <h2 data-i18n="sevens.gameOver">Spiel beendet</h2>

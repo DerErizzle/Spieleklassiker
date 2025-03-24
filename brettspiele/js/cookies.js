@@ -1,8 +1,3 @@
-/**
- * Cookie-Funktionen für Erizzle Games
- */
-
-// Cookie setzen
 function setCookie(name, value, days) {
     const date = new Date();
     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -10,7 +5,6 @@ function setCookie(name, value, days) {
     document.cookie = name + "=" + value + ";" + expires + ";path=/";
 }
 
-// Cookie abrufen
 function getCookie(name) {
     const cookieName = name + "=";
     const cookies = document.cookie.split(';');
@@ -23,17 +17,14 @@ function getCookie(name) {
     return "";
 }
 
-// Cookie löschen
 function deleteCookie(name) {
     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
 }
 
-// Überprüfen, ob Benutzer eingeloggt ist
 function isUserLoggedIn() {
     return getCookie('username') !== "" && getCookie('userColor') !== "";
 }
 
-// Benutzerabmeldung
 function logoutUser() {
     deleteCookie('username');
     deleteCookie('userColor');

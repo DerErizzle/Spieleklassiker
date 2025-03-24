@@ -17,7 +17,7 @@
                            data-i18n-placeholder="login.usernamePlaceholder">
                     <small data-i18n="login.minLength">Mindestens 3 Zeichen</small>
                 </div>
-                
+
                 <div class="form-group">
                     <label data-i18n="login.chooseColor">Wähle eine Spielerfarbe:</label>
                     <div class="color-picker">
@@ -30,9 +30,9 @@
                     </div>
                     <input type="hidden" id="selected-color" name="selected-color" required>
                 </div>
-                
+
                 <button type="submit" id="start-button" disabled data-i18n="login.startButton">Spielen!</button>
-                
+
                 <div class="language-selector login-language-selector">
                     <label for="language-switcher" data-i18n="login.language">Sprache:</label>
                     <select id="language-switcher">
@@ -43,7 +43,7 @@
             </form>
         </div>
     </div>
-    
+
     <script src="js/cookies.js"></script>
     <script src="js/i18n.js"></script>
     <script>
@@ -53,8 +53,7 @@
             const usernameInput = document.getElementById('username');
             const startButton = document.getElementById('start-button');
             const loginForm = document.getElementById('login-form');
-            
-            // Funktion zum Überprüfen, ob das Formular vollständig ist
+
             function checkFormComplete() {
                 if (usernameInput.value.length >= 3 && selectedColorInput.value) {
                     startButton.disabled = false;
@@ -62,49 +61,41 @@
                     startButton.disabled = true;
                 }
             }
-            
-            // Event-Listener für Farbauswahl
+
             colorOptions.forEach(option => {
                 option.addEventListener('click', function() {
-                    // Vorherige Auswahl entfernen
+
                     colorOptions.forEach(opt => opt.classList.remove('selected'));
-                    // Neue Auswahl markieren
+
                     this.classList.add('selected');
-                    // Wert im Hidden Input speichern
+
                     selectedColorInput.value = this.getAttribute('data-color');
                     checkFormComplete();
                 });
             });
-            
-            // Event-Listener für Benutzername
+
             usernameInput.addEventListener('input', checkFormComplete);
-            
-            // Formular-Submit-Handler
+
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
-                // Speichere Benutzername und Farbe in Cookies
+
                 setCookie('username', usernameInput.value, 30);
                 setCookie('userColor', selectedColorInput.value, 30);
-                
-                // Weiterleitung zur Spieleauswahl
+
                 window.location.href = '/';
             });
-            
-            // Überprüfe, ob bereits Cookies existieren
+
             const savedUsername = getCookie('username');
             const savedColor = getCookie('userColor');
-            
+
             if (savedUsername && savedColor) {
-                // Wenn Benutzer bereits eingeloggt ist, zur Spieleliste weiterleiten
+
                 window.location.href = '/';
             }
-            
-            // Für Internationalisierung: Übersetzung der Seite, wenn Übersetzungen geladen sind
+
             i18n.onLoaded(() => {
                 i18n.translatePage();
-                
-                // Platzhalter für das Benutzernamen-Feld setzen
+
                 usernameInput.placeholder = i18n.t('login.usernamePlaceholder');
             });
         });
