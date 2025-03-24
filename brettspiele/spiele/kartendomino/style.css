@@ -17,6 +17,9 @@
     --card-border-radius: 8px;
     --opponent-card-width: 40px;
     --opponent-card-height: 60px;
+    --gold-color: #ffd700;
+    --silver-color: #c0c0c0;
+    --bronze-color: #cd7f32;
 }
 
 .game-table {
@@ -129,6 +132,9 @@
     justify-content: center;
     align-items: center;
     position: relative;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: var(--card-border-radius);
+    margin: 2px;
 }
 
 /* Spielerkarten */
@@ -309,28 +315,31 @@
     border-radius: 5px;
 }
 
-.ranking-item.winner {
-    background-color: #f1c40f;
+/* Medaillen-Farben für Platzierungen */
+.ranking-item.place-1 {
+    background-color: var(--gold-color);
     font-weight: bold;
 }
 
-.ranking-item:nth-child(1) {
-    background-color: gold;
+.ranking-item.place-2 {
+    background-color: var(--silver-color);
     font-weight: bold;
 }
 
-.ranking-item:nth-child(2) {
-    background-color: silver;
+.ranking-item.place-3 {
+    background-color: var(--bronze-color);
     font-weight: bold;
+    color: white;
 }
 
-.ranking-item:nth-child(3) {
-    background-color: #cd7f32; /* Bronze */
-    font-weight: bold;
-}
-
-.ranking-item:nth-child(4) {
+.ranking-item.place-4 {
     background-color: #f8f9fa;
+}
+
+/* Alter Stil für den Fall, dass wir noch winner nutzen */
+.ranking-item.winner {
+    background-color: var(--gold-color);
+    font-weight: bold;
 }
 
 #close-modal-button {

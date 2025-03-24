@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Kartenbild vom CDN laden
                 const cardValue = getCardValueName(i);
-                const cardImageUrl = getCdnUrl(`/games/kartendomino/${cardValue}_of_${suit}.png`);
+                const cardImageUrl = getCdnUrl(`/games/kartendomino/${cardValue}_of_${cardSuit}.png`);
                 cardEl.style.backgroundImage = `url('${cardImageUrl}')`;
                 
                 cardPlaceholder.appendChild(cardEl);
@@ -523,6 +523,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
+     * Platziert Karten auf dem Brett (bei Aufgabe oder Animation)
+     */
+    function placeMultipleCards(placedCards) {
+        if (!placedCards || !placedCards.length) return;
+        
+        // Karten zum Brett hinzufügen und Brett neu rendern
+        placedCards.forEach(card => {
+            if (!board[card.suit].includes(card.value)) {
+                board[card.suit].push(card.value);
+            }
+        });
+        
+        // Sortiere die Karten auf dem Brett
+        for (const suit in board) {
+            board[suit].sort((a, b) => a - b);
+        }
+        
+        // Brett neu rendern
+        renderBoard();
+    }
+    
+    /**
      * Zeigt das Spielende-Modal an
      */
     function showGameOverModal(data) {
@@ -538,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Rangliste
         rankingListEl.innerHTML = '';
         
-        // Rangliste basierend auf der fertigOrder-Reihenfolge sortieren und anzeigen
+        // Rangliste basierend auf der finishedOrder-Reihenfolge anzeigen
         for (let i = 0; i < finishedOrder.length; i++) {
             const playerUsername = finishedOrder[i];
             const playerInfo = ranking.find(p => p.username === playerUsername);
@@ -546,7 +568,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (playerInfo) {
                 const rankingItem = document.createElement('div');
                 rankingItem.className = 'ranking-item';
-                if (playerInfo.username === winner) {
+                
+                // Füge besondere Klasse für Platzierungen hinzu
+                rankingItem.classList.add(`place-${i + 1}`);
+                
+                // Der Gewinner ist der erste Platz (Index 0 in finishedOrder)
+                if (i === 0) {
                     rankingItem.classList.add('winner');
                 }
                 
@@ -698,6 +725,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 hand = [];
                 surrendered = true;
             }
+            
+            // Wenn Karten platziert wurden, aktualisiere das Brett
+            if (data.placedCards && data.placedCards.length > 0) {
+                placeMultipleCards(data.placedCards);
+            }
         }
         
         renderBoard();
@@ -753,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateFinishedPlayerInfo(playerUsername, rank) {
         // Aktualisiere den finishedOrder-Array wenn nicht bereits vorhanden
         if (!finishedOrder.includes(playerUsername)) {
-            // Füge den Spieler an die richtige Position ein
+            // Stelle sicher, dass der Array groß genug ist
             while (finishedOrder.length <= rank) {
                 finishedOrder.push(null);
             }
