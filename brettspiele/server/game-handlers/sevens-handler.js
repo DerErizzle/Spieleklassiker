@@ -455,35 +455,42 @@ const SevensHandler = {
         
         // Spieler hat aufgegeben
         room.gameState.surrendered[playerIndex] = true;
-        const playerUsername = room.players[playerIndex].username;
-        
-        // Wichtig: Den Spieler ZUERST zur finishedOrder hinzufügen, damit placePlayableCards
-        // die korrekten Regeln anwendet
-        if (!room.gameState.finishedOrder.includes(playerUsername)) {
-            // Bei Aufgabe kommt der Spieler ans ENDE der Liste (= letzter Platz)
-            room.gameState.finishedOrder.push(playerUsername);
-        }
-
-        // Jetzt versuchen alle möglichen Karten abzulegen
-        const { playableCount, placedCards, remainingCards } = this.placePlayableCards(
-            room.gameState.board, 
-            hand,
-            room.gameState.finishedOrder
-        );
-        
-        // Die nicht spielbaren Karten bleiben in der Hand des Spielers
-        room.gameState.playerHands[playerIndex] = remainingCards;
-        
-        // Der Rang ist IMMER die aktuelle Länge der finishedOrder minus 1
-        // (da wir den Spieler bereits hinzugefügt haben)
-        const rank = room.gameState.finishedOrder.length - 1;
         
         debug.log('Spieler gibt auf:', {
+            roomCode,
+            username: room.players[playerIndex].username
+        });
+        
+        // Alle spielbaren Karten auf das Brett legen und die restlichen behalten
+        // WICHTIG: Wir platzieren hier restlichen Karten, die man spielen könnte
+        const { playableCount, placedCards, remainingCards } = this.placePlayableCards(
+            room.gameState.board, hand, room.gameState.finishedOrder
+        );
+        
+        // Die Karten des Spielers aktualisieren - hier behalten wir die nicht spielbaren Karten
+        room.gameState.playerHands[playerIndex] = remainingCards;
+        
+        // Den Spieler zur Rangliste hinzufügen, aber mit dem niedrigsten Rang
+        // Der wichtigste Teil: Wir stellen sicher, dass aufgebende Spieler den niedrigsten Rang bekommen
+        // Bestimme den Rang basierend auf der aktuellen finishedOrder
+        const playerUsername = room.players[playerIndex].username;
+        
+        // Spieler an das Ende der finishedOrder setzen (wichtig: diese Liste wird in umgekehrter Reihenfolge
+        // für die Platzierung verwendet - letzter Platz = letzter in der Liste)
+        if (!room.gameState.finishedOrder.includes(playerUsername)) {
+            // Wir fügen den Spieler am Ende hinzu (niedrigster Rang)
+            room.gameState.finishedOrder.push(playerUsername);
+        }
+        
+        // Dieser Rang muss der letzte sein (wichtig für die Anzeige im Client)
+        const rank = room.gameState.finishedOrder.length - 1;
+        
+        debug.log('Spieler aufgegeben, Rangzuweisung:', {
             username: playerUsername,
             rank: rank,
             finishedOrder: room.gameState.finishedOrder,
-            remainingCards: remainingCards.length,
-            placedCards: placedCards.length
+            remainingCardsCount: remainingCards.length,
+            placedCardsCount: placedCards.length
         });
         
         // Nächster Spieler ist dran
@@ -499,6 +506,7 @@ const SevensHandler = {
         
         // Prüfen, ob das Spiel beendet werden soll (3 Spieler fertig)
         if (room.gameState.finishedOrder.length >= 3) {
+            // Spiel beenden - letzte Platzierung vergeben
             this.assignLastPlace(io, roomCode, room);
             return true;
         }
