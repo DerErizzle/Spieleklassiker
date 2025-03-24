@@ -1,4 +1,19 @@
-:root {
+@media (max-width: 1300px) {
+    .game-table {
+        width: 90%;
+        height: auto;
+        min-height: 500px;
+    }
+    
+    .suit-row {
+        min-width: 0;
+    }
+}.container {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 20px;
+    width: 100%;
+}:root {
     --board-color: #1a7c2b;
     --active-turn-color: #27ae60;
     --inactive-turn-color: #7f8c8d;
@@ -18,12 +33,12 @@
     margin-top: 20px;
     display: flex;
     flex-direction: column;
-    min-height: 700px;
+    height: 600px;
+    width: 1200px;
     position: relative;
-    width: 90%;
-    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
+    aspect-ratio: 2 / 1;
 }
 
 /* Gegner-Bereich */
@@ -31,6 +46,7 @@
     display: flex;
     justify-content: space-between;
     margin-bottom: 15px;
+    width: 100%;
 }
 
 .opponent {
@@ -87,12 +103,14 @@
     justify-content: space-evenly;
     margin: 20px 0;
     min-height: 300px;
+    overflow-x: auto;
 }
 
 .suit-row {
     display: flex;
     align-items: center;
     margin: 5px 0;
+    min-width: 1600px;
 }
 
 .suit-label {
@@ -100,7 +118,7 @@
     font-weight: bold;
     color: white;
     margin-right: 15px;
-    width: 30px;
+    width: 50px;
     text-align: center;
 }
 
