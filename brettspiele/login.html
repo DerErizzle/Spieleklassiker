@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geile Games - Willkommen</title>
+    <title data-i18n="common.websiteName">Geile Games - Willkommen</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="login-page">
     <div class="container">
         <div class="login-box">
-            <h1>Willkommen bei Geile Games</h1>
+            <div class="language-selector login-language-selector">
+                <select id="language-switcher">
+                    <option value="de">Deutsch</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            <h1 data-i18n="login.welcome">Willkommen bei Geile Games</h1>
             <form id="login-form">
                 <div class="form-group">
-                    <label for="username">Dein Spielername:</label>
-                    <input type="text" id="username" name="username" required minlength="3" maxlength="15">
+                    <label for="username" data-i18n="login.username">Dein Spielername:</label>
+                    <input type="text" id="username" name="username" required minlength="3" maxlength="15" 
+                           data-i18n-placeholder="login.usernamePlaceholder">
+                    <small data-i18n="login.minLength">Mindestens 3 Zeichen</small>
                 </div>
                 
                 <div class="form-group">
-                    <label>Wähle eine Spielerfarbe:</label>
+                    <label data-i18n="login.chooseColor">Wähle eine Spielerfarbe:</label>
                     <div class="color-picker">
                         <div class="color-option" data-color="#e74c3c" style="background-color: #e74c3c;"></div>
                         <div class="color-option" data-color="#3498db" style="background-color: #3498db;"></div>
@@ -29,12 +37,13 @@
                     <input type="hidden" id="selected-color" name="selected-color" required>
                 </div>
                 
-                <button type="submit" id="start-button" disabled>Spielen!</button>
+                <button type="submit" id="start-button" disabled data-i18n="login.startButton">Spielen!</button>
             </form>
         </div>
     </div>
     
     <script src="js/cookies.js"></script>
+    <script src="js/i18n.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const colorOptions = document.querySelectorAll('.color-option');
@@ -88,6 +97,14 @@
                 // Wenn Benutzer bereits eingeloggt ist, zur Spieleliste weiterleiten
                 window.location.href = '/';
             }
+            
+            // Für Internationalisierung: Übersetzung der Seite, wenn Übersetzungen geladen sind
+            i18n.onLoaded(() => {
+                i18n.translatePage();
+                
+                // Platzhalter für das Benutzernamen-Feld setzen
+                usernameInput.placeholder = i18n.t('login.usernamePlaceholder');
+            });
         });
     </script>
 </body>

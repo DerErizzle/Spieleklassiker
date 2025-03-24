@@ -18,7 +18,9 @@ class GameSocketClient {
             joinError: [],
             playerDisconnected: [],
             playerReconnected: [],
-            gameState: []
+            gameState: [],
+            hoverUpdate: [],
+            error: []
         };
         
         // Verbindung automatisch herstellen
@@ -47,11 +49,12 @@ class GameSocketClient {
         
         this.socket.on('connect_error', (error) => {
             console.error('Verbindungsfehler:', error);
+            this._triggerCallback('error', { message: 'Verbindungsfehler', error });
         });
         
         this.socket.on('disconnect', (reason) => {
             console.log('Verbindung zum Server getrennt:', reason);
-            this._triggerCallback('disconnect');
+            this._triggerCallback('disconnect', { reason });
         });
         
         this.socket.on('playerJoined', (data) => {
@@ -107,6 +110,16 @@ class GameSocketClient {
         this.socket.on('gameState', (data) => {
             console.log('Aktueller Spielstand empfangen:', data);
             this._triggerCallback('gameState', data);
+        });
+        
+        this.socket.on('hoverUpdate', (data) => {
+            // Hier kein console.log für bessere Performance
+            this._triggerCallback('hoverUpdate', data);
+        });
+        
+        this.socket.on('error', (data) => {
+            console.error('Fehler vom Server:', data);
+            this._triggerCallback('error', data);
         });
     }
     

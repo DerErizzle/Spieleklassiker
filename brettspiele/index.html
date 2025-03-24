@@ -3,24 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geile Games - Spieleauswahl</title>
+    <title data-i18n="common.websiteName">Geile Games - Spieleauswahl</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
         <div class="container">
             <div class="header-content">
-                <div class="logo">Geile Games</div>
+                <div class="logo" data-i18n="header.title">Geile Games</div>
+                <div class="language-selector">
+                    <select id="language-switcher">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
                 <div class="user-controls">
                     <div class="user-info">
                         <span id="username-display"></span>
                         <div class="user-color" id="user-color-display"></div>
-                        <button id="logout-button" class="small-button">Abmelden</button>
+                        <button id="logout-button" class="small-button" data-i18n="common.logout">Abmelden</button>
                     </div>
                     <form id="join-room-form" class="room-form">
-                        <input type="text" id="room-code-input" placeholder="Raumcode eingeben" 
-                               pattern="[0-9]{4}" maxlength="4" required>
-                        <button type="submit">Beitreten</button>
+                        <input type="text" id="room-code-input" data-i18n-placeholder="header.joinRoom" 
+                               placeholder="Raumcode eingeben" pattern="[0-9]{4}" maxlength="4" required>
+                        <button type="submit" data-i18n="header.roomButton">Beitreten</button>
                     </form>
                 </div>
             </div>
@@ -28,48 +34,50 @@
     </header>
     
     <div class="container">
-        <h2>Wähle ein Spiel</h2>
+        <h2 data-i18n="gameList.title">Wähle ein Spiel</h2>
         <div class="game-list">
             <div class="game-card" data-game="vier-gewinnt">
                 <div class="game-img" style="background-color: #3498db;"></div>
                 <div class="game-info">
-                    <h3>4 in einer Reihe</h3>
-                    <p>Lass deine Spielsteine fallen und bilde eine Reihe aus vier gleichfarbigen Steinen.</p>
-                    <button class="create-room-btn">Spiel erstellen</button>
+                    <h3 data-i18n="gameList.connectFourTitle">4 in einer Reihe</h3>
+                    <p data-i18n="gameList.connectFourDesc">Lass deine Spielsteine fallen und bilde eine Reihe aus vier gleichfarbigen Steinen.</p>
+                    <button class="create-room-btn" data-i18n="gameList.createGame">Spiel erstellen</button>
                 </div>
             </div>
             
             <div class="game-card disabled" data-game="alle-ablegen">
                 <div class="game-img" style="background-color: #e74c3c;"></div>
                 <div class="game-info">
-                    <h3>Alle Ablegen</h3>
-                    <p>Werde alle deine Karten los, indem du passende Farben oder Zahlen spielst.</p>
-                    <button class="create-room-btn" disabled>Spiel erstellen</button>
+                    <h3 data-i18n="gameList.unoTitle">Alle Ablegen</h3>
+                    <p data-i18n="gameList.unoDesc">Werde alle deine Karten los, indem du passende Farben oder Zahlen spielst.</p>
+                    <button class="create-room-btn" disabled data-i18n="gameList.comingSoon">Demnächst</button>
                 </div>
             </div>
             
             <div class="game-card disabled" data-game="yacht">
                 <div class="game-img" style="background-color: #2ecc71;"></div>
                 <div class="game-info">
-                    <h3>Yacht</h3>
-                    <p>Würfle und sammle Punkte durch verschiedene Kombinationen.</p>
-                    <button class="create-room-btn" disabled>Spiel erstellen</button>
+                    <h3 data-i18n="gameList.yachtTitle">Yacht</h3>
+                    <p data-i18n="gameList.yachtDesc">Würfle und sammle Punkte durch verschiedene Kombinationen.</p>
+                    <button class="create-room-btn" disabled data-i18n="gameList.comingSoon">Demnächst</button>
                 </div>
             </div>
             
             <div class="game-card disabled" data-game="kartendomino">
                 <div class="game-img" style="background-color: #f1c40f;"></div>
                 <div class="game-info">
-                    <h3>Kartendomino</h3>
-                    <p>Lege Karten passend an, um Punkte zu sammeln und als Erster alle Karten abzulegen.</p>
-                    <button class="create-room-btn" disabled>Spiel erstellen</button>
+                    <h3 data-i18n="gameList.dominoTitle">Kartendomino</h3>
+                    <p data-i18n="gameList.dominoDesc">Lege Karten passend an, um Punkte zu sammeln und als Erster alle Karten abzulegen.</p>
+                    <button class="create-room-btn" disabled data-i18n="gameList.comingSoon">Demnächst</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="js/cookies.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="js/webSocket.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Überprüfen, ob der Benutzer eingeloggt ist
@@ -90,9 +98,6 @@
                 logoutUser();
             });
             
-            // Socket.io-Verbindung herstellen
-            const socket = io();
-            
             // Raumbeitritt-Formular
             document.getElementById('join-room-form').addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -103,11 +108,7 @@
                     sessionStorage.setItem('currentRoom', roomCode);
                     
                     // Sende Beitrittsanfrage an den Server
-                    socket.emit('joinRoom', {
-                        roomCode: roomCode,
-                        username: username,
-                        userColor: userColor
-                    });
+                    gameSocket.joinRoom(roomCode, username, userColor);
                 }
             });
             
@@ -119,18 +120,14 @@
                     const gameType = gameCard.getAttribute('data-game');
                     
                     // Sende Raumerstellungsanfrage an den Server
-                    socket.emit('createRoom', {
-                        gameType: gameType,
-                        username: username,
-                        userColor: userColor
-                    });
+                    gameSocket.createRoom(gameType, username, userColor);
                 });
             });
             
             // Server-Antworten verarbeiten
             
             // Bei erfolgreicher Raumerstellung
-            socket.on('roomCreated', function(data) {
+            gameSocket.on('roomCreated', function(data) {
                 // Speichere das gewählte Spiel und den Raumcode in der Session
                 sessionStorage.setItem('currentGame', data.gameType);
                 sessionStorage.setItem('currentRoom', data.roomCode);
@@ -140,7 +137,7 @@
             });
             
             // Bei erfolgreichem Raumbeitritt
-            socket.on('joinSuccess', function(data) {
+            gameSocket.on('joinSuccess', function(data) {
                 // Speichere das gewählte Spiel und den Raumcode in der Session
                 sessionStorage.setItem('currentGame', data.gameType);
                 sessionStorage.setItem('currentRoom', data.roomCode);
@@ -150,8 +147,13 @@
             });
             
             // Bei fehlgeschlagenem Raumbeitritt
-            socket.on('joinError', function(error) {
-                alert('Fehler: ' + error);
+            gameSocket.on('joinError', function(error) {
+                alert(error);
+            });
+
+            // Für Internationalisierung: Übersetzung der Seite, wenn Übersetzungen geladen sind
+            i18n.onLoaded(() => {
+                i18n.translatePage();
             });
         });
     </script>

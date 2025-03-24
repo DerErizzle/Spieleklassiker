@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4 in einer Reihe - Geile Games</title>
+    <title data-i18n="connectFour.title">4 in einer Reihe - Geile Games</title>
     <link rel="stylesheet" href="../../css/style.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,11 +11,20 @@
     <header>
         <div class="container">
             <div class="header-content">
-                <div class="logo">Geile Games: 4 in einer Reihe</div>
+                <div class="logo">
+                    <span data-i18n="common.websiteName">Geile Games</span>: 
+                    <span data-i18n="connectFour.title">4 in einer Reihe</span>
+                </div>
+                <div class="language-selector">
+                    <select id="language-switcher">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
                 <div class="user-info">
                     <span id="username-display"></span>
                     <div class="user-color" id="user-color-display"></div>
-                    <button id="back-button">Zurück zur Übersicht</button>
+                    <button id="back-button" data-i18n="common.backToGames">Zurück zur Übersicht</button>
                 </div>
             </div>
         </div>
@@ -27,12 +36,14 @@
                 <div class="player-list" id="player-list">
                     <!-- Spielerliste wird dynamisch befüllt -->
                 </div>
-                <div class="game-status" id="game-status">Warte auf Spieler...</div>
-                <!-- Neues Element für Verbindungsstatus-Nachrichten -->
-                <div class="connection-status" id="connection-status">
+                <div class="game-status" id="game-status" data-i18n="connectFour.waitingForPlayers">Warte auf Spieler...</div>
+                <div class="connection-status" id="connection-status" data-i18n="connectFour.connectionLost">
                     Der andere Spieler hat die Verbindung verloren...
                 </div>
-                <div class="room-code">Raumcode: <span id="room-code-display"></span></div>
+                <div class="room-code">
+                    <span data-i18n="common.roomCode">Raumcode</span>: 
+                    <span id="room-code-display"></span>
+                </div>
             </div>
             
             <div class="game-board" id="game-board">
@@ -40,12 +51,13 @@
             </div>
             
             <div id="game-controls" style="margin-top: 20px; display: none;">
-                <button id="restart-button">Neues Spiel</button>
+                <button id="restart-button" data-i18n="connectFour.newGame">Neues Spiel</button>
             </div>
         </div>
     </div>
 
     <script src="../../js/cookies.js"></script>
+    <script src="../../js/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="../../js/webSocket.js"></script>
     <script src="game.js"></script>

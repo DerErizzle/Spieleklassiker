@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!document.getElementById('connection-status')) {
         connectionStatusEl.className = 'connection-status';
         connectionStatusEl.id = 'connection-status';
-        connectionStatusEl.textContent = 'Der andere Spieler hat die Verbindung verloren...';
+        connectionStatusEl.setAttribute('data-i18n', 'connectFour.connectionLost');
+        connectionStatusEl.textContent = i18n.t('connectFour.connectionLost');
         connectionStatusEl.style.display = 'none';
         document.querySelector('.game-info-panel').appendChild(connectionStatusEl);
     }
@@ -312,12 +313,13 @@ document.addEventListener('DOMContentLoaded', function() {
             playerColorDiv.style.backgroundColor = player.color;
             
             const playerName = document.createElement('span');
-            playerName.textContent = player.username;
+            let playerNameText = player.username;
+            
             if (player.isHost) {
-                playerName.textContent += ' (Host)';
+                playerNameText += ` (${i18n.t('connectFour.host')})`;
             }
             if (player.username === username) {
-                playerName.textContent += ' (Du)';
+                playerNameText += ' (Du)';
                 if (player.color !== userColor) {
                     activePlayerColor = player.color;
                     if (hoverPiece) {
@@ -325,6 +327,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+            
+            playerName.textContent = playerNameText;
             
             playerDiv.appendChild(playerColorDiv);
             playerDiv.appendChild(playerName);
@@ -339,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateGameStatus() {
         if (!gameActive && !gameOver) {
-            gameStatusEl.textContent = 'Warte auf Spieler...';
+            gameStatusEl.textContent = i18n.t('connectFour.waitingForPlayers');
             gameStatusEl.className = 'game-status';
             boardEl.classList.add('inactive-game');
             return;
@@ -352,12 +356,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (currentPlayerUsername === username) {
-            gameStatusEl.textContent = 'Du bist am Zug!';
+            gameStatusEl.textContent = i18n.t('connectFour.yourTurn');
             gameStatusEl.className = 'game-status your-turn';
         } else {
             const currentPlayer = players.find(p => p.username === currentPlayerUsername);
             if (currentPlayer) {
-                gameStatusEl.textContent = `${currentPlayerUsername} ist am Zug`;
+                gameStatusEl.textContent = i18n.t('connectFour.otherTurn', { player: currentPlayerUsername });
                 gameStatusEl.className = 'game-status not-your-turn';
             }
         }
@@ -386,6 +390,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateConnectionStatus(isDisconnected) {
         connectionStatusEl.style.display = isDisconnected ? 'block' : 'none';
+    }
+    
+    // Internationalisierungs-Handler
+    i18n.onLoaded(() => {
+        i18n.translatePage();
+        updateGameStatus(); // Um sicherzustellen, dass Texte übersetzt sind
+    });
+    
+    // Sprachauswahl-Handler
+    const languageSwitcher = document.getElementById('language-switcher');
+    if (languageSwitcher) {
+        languageSwitcher.addEventListener('change', function() {
+            i18n.setLanguage(this.value).then(() => {
+                updateGameStatus(); // Status mit neuer Sprache aktualisieren
+            });
+        });
     }
     
     gameSocket.on('connect', () => {
@@ -454,11 +474,13 @@ document.addEventListener('DOMContentLoaded', function() {
         gameOver = true;
         
         if (data.winner) {
-            gameStatusEl.textContent = data.winner === username ? 
-                'Du hast gewonnen! 🎉' : 
-                `${data.winner} hat gewonnen!`;
+            if (data.winner === username) {
+                gameStatusEl.textContent = i18n.t('connectFour.youWon');
+            } else {
+                gameStatusEl.textContent = i18n.t('connectFour.otherWon', { player: data.winner });
+            }
         } else {
-            gameStatusEl.textContent = 'Unentschieden!';
+            gameStatusEl.textContent = i18n.t('connectFour.draw');
         }
         
         gameStatusEl.className = 'game-status winner-message';
@@ -494,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     gameSocket.on('joinError', (error) => {
-        alert('Fehler: ' + error);
+        alert(error);
         window.location.href = '/';
     });
     

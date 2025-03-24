@@ -1,0 +1,77 @@
+{
+    "common": {
+      "websiteName": "Awesome Games",
+      "logout": "Logout",
+      "back": "Back",
+      "roomCode": "Room Code",
+      "join": "Join",
+      "create": "Create",
+      "restart": "Restart",
+      "loading": "Loading...",
+      "error": "Error",
+      "success": "Success",
+      "yes": "Yes",
+      "no": "No",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "backToGames": "Back to Overview"
+    },
+    "header": {
+      "title": "Awesome Games",
+      "joinRoom": "Enter room code",
+      "roomButton": "Join"
+    },
+    "login": {
+      "welcome": "Welcome to Awesome Games",
+      "username": "Your player name",
+      "minLength": "At least 3 characters",
+      "maxLength": "Maximum 15 characters",
+      "chooseColor": "Choose a player color",
+      "startButton": "Play!",
+      "usernamePlaceholder": "Enter name..."
+    },
+    "gameList": {
+      "title": "Choose a Game",
+      "connectFourTitle": "Connect Four",
+      "connectFourDesc": "Drop your pieces and form a line of four pieces of the same color.",
+      "unoTitle": "Uno",
+      "unoDesc": "Get rid of all your cards by playing matching colors or numbers.",
+      "yachtTitle": "Yacht",
+      "yachtDesc": "Roll dice and collect points through various combinations.",
+      "dominoTitle": "Card Domino",
+      "dominoDesc": "Place cards to match and collect points, being the first to place all cards.",
+      "createGame": "Create Game",
+      "comingSoon": "Coming Soon"
+    },
+    "connectFour": {
+      "title": "Connect Four",
+      "waitingForPlayers": "Waiting for players...",
+      "yourTurn": "It's your turn!",
+      "otherTurn": "{player}'s turn",
+      "youWon": "You won! 🎉",
+      "otherWon": "{player} won!",
+      "draw": "It's a draw!",
+      "newGame": "New Game",
+      "connectionLost": "The other player lost connection...",
+      "host": "Host"
+    },
+    "errors": {
+      "roomNotFound": "The room does not exist.",
+      "roomFull": "The room is full.",
+      "notYourTurn": "It's not your turn.",
+      "gameTypeNotSupported": "This game type is not supported."
+    },
+    "debug": {
+      "title": "Debug Mode",
+      "backButton": "Back to Home",
+      "refreshRooms": "Refresh Rooms",
+      "clearConsole": "Clear Console",
+      "connectionStatus": "Socket Connection Status",
+      "rooms": "Rooms",
+      "roomDetails": "Room Details",
+      "console": "Console",
+      "noRooms": "No rooms available",
+      "roomCount": "{count} rooms active",
+      "noRoomSelected": "No room selected"
+    }
+  }
