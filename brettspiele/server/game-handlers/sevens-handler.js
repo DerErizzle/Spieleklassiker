@@ -119,12 +119,42 @@ const SevensHandler = {
     /**
      * Prüft, ob eine Karte spielbar ist
      */
-    isCardPlayable(board, card) {
+    isCardPlayable(board, card, finishedOrder = []) {
         const { suit, value } = card;
         const suitValues = board[suit];
         
-        // Prüfen, ob die Karte direkt neben einem bereits vorhandenen Wert liegt
-        return suitValues.includes(value - 1) || suitValues.includes(value + 1);
+        // Grundregel: Karte muss zu einer bereits auf dem Tisch liegenden Karte passen
+        const isAdjacent = suitValues.includes(value - 1) || suitValues.includes(value + 1);
+        
+        if (!isAdjacent) {
+            return false;
+        }
+        
+        // Wenn mindestens ein Spieler fertig ist, prüfe ob Lücken vorhanden sind
+        if (finishedOrder && finishedOrder.length > 0) {
+            const middleValue = 7;
+            
+            // Wenn die Karte kleiner als 7 ist
+            if (value < middleValue) {
+                // Prüfe alle Karten zwischen der neuen Karte und 7
+                for (let i = value + 1; i < middleValue; i++) {
+                    if (!suitValues.includes(i)) {
+                        return false; // Lücke in der Sequenz gefunden
+                    }
+                }
+            } 
+            // Wenn die Karte größer als 7 ist
+            else if (value > middleValue) {
+                // Prüfe alle Karten zwischen 7 und der neuen Karte
+                for (let i = middleValue + 1; i < value; i++) {
+                    if (!suitValues.includes(i)) {
+                        return false; // Lücke in der Sequenz gefunden
+                    }
+                }
+            }
+        }
+        
+        return true;
     },
     
     /**
@@ -134,7 +164,7 @@ const SevensHandler = {
      * @param {Array} cards - Karten des Spielers
      * @returns {Object} - Informationen über die abgelegten Karten
      */
-    placePlayableCards(board, cards) {
+    placePlayableCards(board, cards, finishedOrder = []) {
         let playableCount = 0;
         let remainingCards = [...cards];
         let placedCards = [];
@@ -146,7 +176,7 @@ const SevensHandler = {
             
             for (let i = remainingCards.length - 1; i >= 0; i--) {
                 const card = remainingCards[i];
-                if (this.isCardPlayable(board, card)) {
+                if (this.isCardPlayable(board, card, finishedOrder)) {
                     // Karte auf das Brett legen
                     board[card.suit].push(card.value);
                     // Karte aus der Hand entfernen
@@ -179,8 +209,8 @@ const SevensHandler = {
     /**
      * Prüft, ob ein Spieler Karten spielen kann
      */
-    canPlayerPlayCards(board, hand) {
-        return hand.some(card => this.isCardPlayable(board, card));
+    canPlayerPlayCards(board, hand, finishedOrder = []) {
+        return hand.some(card => this.isCardPlayable(board, card, finishedOrder));
     },
     
     /**
@@ -415,7 +445,7 @@ const SevensHandler = {
         
         // Prüfen, ob der Spieler keine spielbaren Karten hat
         const hand = room.gameState.playerHands[playerIndex];
-        if (this.canPlayerPlayCards(room.gameState.board, hand)) {
+        if (this.canPlayerPlayCards(room.gameState.board, hand, room.gameState.finishedOrder)) {
             debug.log('Spieler könnte Karten spielen, aber will aufgeben:', {
                 roomCode,
                 username: room.players[playerIndex].username
@@ -432,17 +462,20 @@ const SevensHandler = {
         });
         
         // Alle spielbaren Karten auf das Brett legen und die restlichen behalten
-        const { playableCount, placedCards, remainingCards } = this.placePlayableCards(room.gameState.board, hand);
+        const { playableCount, placedCards, remainingCards } = this.placePlayableCards(
+            room.gameState.board, hand, room.gameState.finishedOrder
+        );
         
-        // Hand des Spielers leeren
-        room.gameState.playerHands[playerIndex] = [];
+        // Nicht mehr alle Karten entfernen - nur die spielbaren
+        room.gameState.playerHands[playerIndex] = remainingCards;
         
         // Spieler zur Liste der fertig gewordenen Spieler hinzufügen (wenn nicht bereits vorhanden)
+        // aber gib ihm den korrekten Rang basierend auf der aktuellen Anzahl der fertigen Spieler
+        const playerRank = room.gameState.finishedOrder.length;
+        
         if (!room.gameState.finishedOrder.includes(room.players[playerIndex].username)) {
             room.gameState.finishedOrder.push(room.players[playerIndex].username);
         }
-        
-        const finishRank = room.gameState.finishedOrder.length - 1; // Der erste Spieler bekommt Rang 0
         
         // Nächster Spieler ist dran
         this.moveToNextPlayer(io, roomCode, room, {
@@ -450,8 +483,8 @@ const SevensHandler = {
             player: room.players[playerIndex].username,
             remainingCards: remainingCards.length,
             playableCardsPlaced: playableCount,
-            placedCards: placedCards, // Neue Information: welche Karten wurden platziert
-            rank: finishRank, // 0-basierter Index in der finishedOrder Liste
+            placedCards: placedCards,
+            rank: playerRank, // Korrekter Rang basierend auf aktueller Position
             finishedOrder: room.gameState.finishedOrder
         });
         
