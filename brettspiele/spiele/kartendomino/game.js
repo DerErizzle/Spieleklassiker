@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let surrendered = false;
     let gameOver = false;
     let surrenderedPlayers = [];
+    let finishedOrder = []; // Reihenfolge, in der Spieler fertig werden
     
     // UI initialisieren
     usernameDisplayEl.textContent = username;
@@ -102,10 +103,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spielbrett initial rendern
     renderBoard();
-    
-    // Herzfarbe für rote Symbole
-    document.querySelector('#hearts-row .suit-label').classList.add('red');
-    document.querySelector('#diamonds-row .suit-label').classList.add('red');
     
     /**
      * Zeigt die Karten eines Spielers an
@@ -251,6 +248,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         opponent.passCountEl.textContent = '';
                     }
                     
+                    // Platzierung anzeigen, wenn der Spieler aufgegeben hat oder fertig ist
+                    if (player.finished && player.rank !== undefined) {
+                        opponent.nameEl.textContent = `${player.username} (#${player.rank + 1})`;
+                    }
+                    
                     // Markieren, wenn dieser Spieler dran ist
                     if (player.username === currentPlayerUsername) {
                         opponent.el.classList.add('active-player');
@@ -277,6 +279,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         opponent.passCountEl.textContent = i18n.t('sevens.passCountShort') + ': ' + player.passCount + '/3';
                     } else {
                         opponent.passCountEl.textContent = '';
+                    }
+                    
+                    // Platzierung anzeigen, wenn der Spieler aufgegeben hat oder fertig ist
+                    if (player.finished && player.rank !== undefined) {
+                        opponent.nameEl.textContent = `${player.username} (#${player.rank + 1})`;
                     }
                     
                     // Markieren, wenn dieser Spieler dran ist
@@ -333,6 +340,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (player.isBot) {
                 playerNameText += ` (${i18n.t('sevens.bot')})`;
+            }
+            
+            // Platzierung anzeigen, wenn der Spieler aufgegeben hat oder fertig ist
+            if (player.finished && player.rank !== undefined) {
+                playerNameText += ` (#${player.rank + 1})`;
             }
             
             playerName.textContent = playerNameText;
@@ -504,7 +516,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Rangliste
         rankingListEl.innerHTML = '';
         
-        ranking.forEach((player, index) => {
+        // Sortiere die Rangliste nach der Rang-Position (die vom Server bestimmt wurde)
+        const sortedRanking = [...ranking].sort((a, b) => a.rank - b.rank);
+        
+        sortedRanking.forEach((player) => {
             const rankingItem = document.createElement('div');
             rankingItem.className = 'ranking-item';
             if (player.username === winner) {
@@ -512,7 +527,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const playerName = document.createElement('span');
-            let playerNameText = `${index + 1}. ${player.username}`;
+            let playerNameText = `${player.rank + 1}. ${player.username}`;
             
             if (player.username === username) {
                 playerNameText += ' (Du)';
@@ -523,11 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             playerName.textContent = playerNameText;
             
-            const cardsLeft = document.createElement('span');
-            cardsLeft.textContent = `${player.cardsLeft} ${i18n.t('sevens.cardsLeft')}`;
-            
             rankingItem.appendChild(playerName);
-            rankingItem.appendChild(cardsLeft);
             rankingListEl.appendChild(rankingItem);
         });
         
@@ -566,10 +577,6 @@ document.addEventListener('DOMContentLoaded', function() {
             gameSocket.socket.emit('startGame', {
                 roomCode: roomCode
             });
-            
-            // Spielfeld direkt anzeigen, ohne Neuladen
-            gameTableEl.style.display = 'flex';
-            startGameContainer.style.display = 'none';
         }
     });
     
@@ -611,24 +618,30 @@ document.addEventListener('DOMContentLoaded', function() {
     gameSocket.on('gameStarted', (data) => {
         gameActive = true;
         gameOver = false;
-        gameTableEl.style.display = 'flex';
-        startGameContainer.style.display = 'none';
         
         players = data.players;
         currentPlayerUsername = data.currentPlayer;
         board = data.board;
         
-        // Karten initial rendern
+        // Spielfeld anzeigen
+        gameTableEl.style.display = 'flex';
+        startGameContainer.style.display = 'none';
+        
+        // UI aktualisieren
         renderBoard();
-        renderOpponents();
         updatePlayerList(players);
         updateGameStatus();
+        renderOpponents();
+        
+        // Sofort den aktuellen Spielstand vom Server anfordern
+        gameSocket.socket.emit('requestGameState', { roomCode });
     });
     
     gameSocket.on('handDealt', (data) => {
         hand = data.hand;
         playerIndex = data.playerIndex;
         renderPlayerHand();
+        renderOpponents(); // Aktualisiere Gegner nachdem wir den playerIndex kennen
     });
     
     gameSocket.on('moveUpdate', (data) => {
@@ -654,6 +667,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 hand = [];
                 surrendered = true;
             }
+            
+            // Platzierung des aufgebenden Spielers aktualisieren
+            const playerIndex = finishedOrder.length;
+            finishedOrder.push(data.player);
+            
+            // Platzierung für den aufgebenden Spieler setzen
+            const playerToUpdate = players.find(p => p.username === data.player);
+            if (playerToUpdate) {
+                playerToUpdate.finished = true;
+                playerToUpdate.rank = playerIndex;
+            }
         }
         
         renderBoard();
@@ -664,6 +688,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const playerObj = players.find(p => p.username === data.player);
             if (playerObj) {
                 playerObj.cardsLeft = data.remainingCards;
+                
+                // Wenn der Spieler keine Karten mehr hat, hat er gewonnen
+                if (data.remainingCards === 0) {
+                    const playerIndex = finishedOrder.length;
+                    finishedOrder.push(data.player);
+                    
+                    playerObj.finished = true;
+                    playerObj.rank = playerIndex;
+                }
             }
         } else if (data.type === 'pass') {
             const playerObj = players.find(p => p.username === data.player);
@@ -709,6 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
         passCount = 0;
         surrendered = false;
         surrenderedPlayers = [];
+        finishedOrder = [];
         board = {
             spades: [7],
             clubs: [7],
@@ -746,6 +780,14 @@ document.addEventListener('DOMContentLoaded', function() {
             data.players.forEach(player => {
                 if (player.surrendered) {
                     surrenderedPlayers.push(player.username);
+                }
+                
+                // Spieler mit Platzierung
+                if (player.finished && player.rank !== undefined) {
+                    while (finishedOrder.length <= player.rank) {
+                        finishedOrder.push(null);
+                    }
+                    finishedOrder[player.rank] = player.username;
                 }
             });
         }
