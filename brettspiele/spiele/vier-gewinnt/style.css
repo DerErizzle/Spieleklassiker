@@ -15,6 +15,8 @@
 .board-rows {
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
 }
 
 .board-row {
@@ -34,14 +36,14 @@
     position: relative;
 }
 
-/* Unsichtbare Hitbox für die ganze Spalte */
+/* Unsichtbare Hitbox für die ganze Spalte - wird jetzt präzise in JavaScript platziert */
 .column-hitbox {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 84px; /* Exakt die Breite einer Zelle plus Margin */
     z-index: 10;
     cursor: pointer;
+    /* Breite und Position werden in JavaScript dynamisch berechnet */
 }
 
 /* Hover-Reihe über dem Spielbrett */
@@ -52,6 +54,7 @@
     display: flex;
     justify-content: center;
     margin-bottom: 7px;
+    z-index: 2;
 }
 
 /* Hover-Stücke */
@@ -62,6 +65,7 @@
     position: absolute;
     opacity: 0.5;
     transition: left 0.2s ease;
+    /* Position wird in JavaScript dynamisch berechnet */
 }
 
 /* Gegnerischer Hover-Effekt */
@@ -77,6 +81,7 @@
     border-radius: 50%;
     z-index: 20;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    /* Position wird in JavaScript dynamisch berechnet */
 }
 
 /* Verbesserte Animation für fallendes Spielstück */
@@ -146,7 +151,7 @@
     pointer-events: none;
 }
 
-/* Responsive Anpassungen */
+/* Responsive Anpassungen - Breiten und Positionen werden jetzt in JavaScript dynamisch berechnet */
 @media (max-width: 768px) {
     .cell {
         width: 50px;
@@ -162,10 +167,6 @@
     .hover-row {
         height: 50px;
         margin-bottom: 5px;
-    }
-    
-    .column-hitbox {
-        width: 60px;
     }
     
     .animation-placeholder {
@@ -189,10 +190,6 @@
     .hover-row {
         height: 40px;
         margin-bottom: 4px;
-    }
-    
-    .column-hitbox {
-        width: 48px;
     }
     
     .animation-placeholder {

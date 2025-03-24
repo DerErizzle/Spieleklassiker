@@ -59,6 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let hoverRowEl = null;
     let lastHoverColumn = null; // Verfolgt den letzten Hover-Zustand
     
+    // Konstanten für präzise Positionierungen
+    const CELL_WIDTH = 70; // Pixel
+    const CELL_MARGIN = 7; // Pixel
+    const CELL_TOTAL_WIDTH = CELL_WIDTH + (CELL_MARGIN * 2); // Gesamtbreite inkl. Margins
+    
     // Spielbrett initialisieren (verbessert)
     function initializeBoard() {
         boardEl.innerHTML = '';
@@ -110,11 +115,15 @@ document.addEventListener('DOMContentLoaded', function() {
         addColumnHitboxes();
     }
     
-    // Verbesserte Spalten-Hitboxen mit exakten Positionierungen
+    // Verbesserte Spalten-Hitboxes mit exakten Positionierungen
     function addColumnHitboxes() {
         // Vorhandene Hitboxes entfernen (falls vorhanden)
         const existingHitboxes = boardEl.querySelectorAll('.column-hitbox');
         existingHitboxes.forEach(hitbox => hitbox.remove());
+        
+        // Die tatsächliche Breite des Bretts ermitteln
+        const boardWidth = boardEl.querySelector('.board-rows').offsetWidth;
+        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
         
         // Neue Hitboxes mit exakten Positionierungen hinzufügen
         for (let col = 0; col < 7; col++) {
@@ -122,10 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
             hitbox.className = 'column-hitbox';
             hitbox.dataset.column = col;
             
-            // Exakte Positionierung (mittig über jeder Spalte)
-            const cellWidth = 84; // 70px Zelle + 14px Margin
-            hitbox.style.left = col * cellWidth + 'px';
-            hitbox.style.width = cellWidth + 'px';
+            // Präzise Positionierung: exakt über jeder Spalte
+            hitbox.style.left = (col * colWidth) + 'px';
+            hitbox.style.width = colWidth + 'px';
             
             // Event-Listener für die Hitbox
             hitbox.addEventListener('click', () => {
@@ -186,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Hover-Stück anzeigen (verbessert)
+    // Hover-Stück anzeigen (verbessert mit präziserer Positionierung)
     function showHoverPiece(column) {
         if (!hoverPiece || !gameActive || animationRunning) return;
         
@@ -196,15 +204,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Die tatsächliche Breite des Bretts ermitteln
+        const boardWidth = boardEl.querySelector('.board-rows').offsetWidth;
+        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
+        
         // Exakte Position berechnen (mittig in der Spalte)
-        const cellWidth = 84; // 70px Breite + 14px Margin
-        const leftPosition = column * cellWidth + 7; // +7px für den linken Rand
+        const leftPosition = (column * colWidth) + ((colWidth - CELL_WIDTH) / 2);
         
         hoverPiece.style.display = 'block';
         hoverPiece.style.left = leftPosition + 'px';
     }
     
-    // Gegnerisches Hover-Stück anzeigen
+    // Gegnerisches Hover-Stück anzeigen (mit präziserer Positionierung)
     function showOpponentHoverPiece(column, color) {
         if (!opponentHoverPiece || !gameActive) return;
         
@@ -213,9 +224,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Berechne die Position basierend auf der Spalte
-        const cellWidth = 84; // 70px Breite + 14px Margin
-        const leftPosition = column * cellWidth + 7;
+        // Die tatsächliche Breite des Bretts ermitteln
+        const boardWidth = boardEl.querySelector('.board-rows').offsetWidth;
+        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
+        
+        // Exakte Position berechnen (mittig in der Spalte)
+        const leftPosition = (column * colWidth) + ((colWidth - CELL_WIDTH) / 2);
         
         opponentHoverPiece.style.display = 'block';
         opponentHoverPiece.style.backgroundColor = color;
@@ -254,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gameSocket.makeMove(roomCode, column);
     }
     
-    // Verbesserte Animation für fallenden Spielstein
+    // Verbesserte Animation für fallenden Spielstein (mit präziserer Positionierung)
     function placePiece(row, column, playerUsername, playerColor) {
         if (row === null || column === null || animationRunning) return;
         
@@ -264,9 +278,12 @@ document.addEventListener('DOMContentLoaded', function() {
         hideHoverPiece();
         hideOpponentHoverPiece();
         
-        // Berechne die Position (mittig zentriert)
-        const cellWidth = 84; // 70px Breite + 14px Margin
-        const leftPosition = column * cellWidth + 7; // +7px für den linken Rand
+        // Die tatsächliche Breite des Bretts ermitteln
+        const boardWidth = boardEl.querySelector('.board-rows').offsetWidth;
+        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
+        
+        // Exakte Position berechnen (mittig in der Spalte)
+        const leftPosition = (column * colWidth) + ((colWidth - CELL_WIDTH) / 2);
         
         // Finde die Zielzelle
         const targetCell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${column}"]`);
@@ -565,6 +582,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isHost) {
             gameSocket.restartGame(roomCode);
         }
+    });
+    
+    // Fenster-Resize-Event hinzufügen, um Hitboxes neu zu berechnen
+    window.addEventListener('resize', () => {
+        // Kurze Verzögerung, um sicherzustellen, dass die DOM-Änderungen abgeschlossen sind
+        setTimeout(() => {
+            addColumnHitboxes();
+            
+            // Hover-Effekt aktualisieren, falls nötig
+            if (lastHoverColumn !== null) {
+                showHoverPiece(lastHoverColumn);
+            }
+        }, 200);
     });
     
     // Spielbrett initialisieren
