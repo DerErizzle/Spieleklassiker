@@ -717,23 +717,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Hier nichts tun, der Server wird die finishedOrder aktualisieren
             }
         } else if (data.type === 'surrender') {
-            // Wenn wir der aufgebende Spieler sind
+            // Für den aufgebenden Spieler: Platziere ALLE Karten aus der Hand auf dem Board.
             if (data.player === username) {
-                // Bei Aufgabe: NICHT die Hand leeren, sondern nur die gespielten Karten entfernen
-                if (data.placedCards && data.placedCards.length > 0) {
-                    // Entferne nur die Karten, die platziert wurden
-                    for (const placedCard of data.placedCards) {
-                        hand = hand.filter(card => 
-                            !(card.suit === placedCard.suit && card.value === placedCard.value)
-                        );
-                    }
-                    surrendered = true;
-                }
+                // Übergib alle Karten in der Hand an das Board
+                placeMultipleCards(hand);
+                // Setze das surrender-Flag, damit andere Logik weiß, dass dieser Spieler aufgegeben hat.
+                surrendered = true;
+                // Optional: Leere die Hand (sofern du nicht mehr willst, dass die Karten als Handkarten erscheinen)
+                hand = [];
             }
             
-            // Wenn Karten platziert wurden, aktualisiere das Brett
+            // Falls der Server weitere (geplante) Kartenpositionen mitliefert, diese ebenfalls auf dem Board platzieren.
             if (data.placedCards && data.placedCards.length > 0) {
                 placeMultipleCards(data.placedCards);
+            }
+            
+            // Falls der Server die Anzahl verbleibender Karten sendet, diese im Spielerobjekt aktualisieren
+            const playerObj = players.find(p => p.username === data.player);
+            if (playerObj && data.remainingCards !== undefined) {
+                 playerObj.cardsLeft = data.remainingCards;
+            }
+            
+            // Wenn der Server den Rang für den Surrender-Fall liefert, diesen übernehmen.
+            if (data.rank !== undefined) {
+                 updateFinishedPlayerInfo(data.player, data.rank);
             }
         }
         
