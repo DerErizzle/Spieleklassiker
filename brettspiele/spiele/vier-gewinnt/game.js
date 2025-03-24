@@ -1,26 +1,18 @@
-/**
- * Vier Gewinnt - Verbesserte Spiellogik
- */
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Überprüfen, ob der Benutzer eingeloggt ist
     if (!isUserLoggedIn()) {
         window.location.href = '/login';
         return;
     }
     
-    // Benutzerdaten abrufen
     const username = getCookie('username');
     const userColor = getCookie('userColor');
     
-    // Raumcode abrufen
     const roomCode = sessionStorage.getItem('currentRoom');
     if (!roomCode) {
         window.location.href = '/';
         return;
     }
     
-    // DOM-Elemente abrufen
     const boardEl = document.getElementById('game-board');
     const playerListEl = document.getElementById('player-list');
     const gameStatusEl = document.getElementById('game-status');
@@ -31,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const restartButton = document.getElementById('restart-button');
     const gameControls = document.getElementById('game-controls');
     
-    // Neues Element für Verbindungsstatus hinzufügen
     const connectionStatusEl = document.getElementById('connection-status') || document.createElement('div');
     if (!document.getElementById('connection-status')) {
         connectionStatusEl.className = 'connection-status';
@@ -41,12 +32,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.game-info-panel').appendChild(connectionStatusEl);
     }
     
-    // Benutzerdaten anzeigen
     usernameDisplayEl.textContent = username;
     userColorDisplayEl.style.backgroundColor = userColor;
     roomCodeEl.textContent = roomCode;
     
-    // Spielvariablen
     let players = [];
     let currentPlayerUsername = '';
     let gameActive = false;
@@ -54,61 +43,53 @@ document.addEventListener('DOMContentLoaded', function() {
     let gameBoard = [];
     let hoverPiece = null;
     let opponentHoverPiece = null;
-    let activePlayerColor = userColor; // Tatsächliche Spielerfarbe (kann bei Konflikt geändert werden)
-    let animationRunning = false; // Verhindert mehrere gleichzeitige Animationen
+    let activePlayerColor = userColor;
+    let animationRunning = false;
     let hoverRowEl = null;
-    let boardRowsEl = null; // Speichert Referenz auf das Brett-Container-Element
-    let lastHoverColumn = null; // Verfolgt den letzten Hover-Zustand
-    let gameOver = false; // Verfolgt, ob das Spiel mit einem Gewinner beendet wurde
-    let animationLayer = null; // Speichert Referenz auf den Animation-Container
+    let boardRowsEl = null;
+    let lastHoverColumn = null;
+    let gameOver = false;
+    let animationLayer = null;
     
-    // Konstanten für präzise Positionierungen
-    const CELL_WIDTH = 70; // Pixel
-    const CELL_MARGIN = 7; // Pixel
-    const CELL_TOTAL_WIDTH = CELL_WIDTH + (CELL_MARGIN * 2); // Gesamtbreite inkl. Margins
+    const CELL_WIDTH = 70;
+    const CELL_MARGIN = 7;
+    const CELL_TOTAL_WIDTH = CELL_WIDTH + (CELL_MARGIN * 2);
+    const NUM_COLUMNS = 7;
+    const NUM_ROWS = 6;
+    let colWidth = 0;
     
-    // Spielbrett initialisieren (verbessert)
     function initializeBoard() {
         boardEl.innerHTML = '';
         
-        // Einfacher Aufbau:
-        // 1. Animation-Layer für die fallenden Chips
         animationLayer = document.createElement('div');
         animationLayer.className = 'animation-layer';
         boardEl.appendChild(animationLayer);
         
-        // 2. Board-Rows mit den Zellen (Löcher)
         boardRowsEl = document.createElement('div');
         boardRowsEl.className = 'board-rows';
         boardEl.appendChild(boardRowsEl);
         
-        // 3. Hover-Row für die schwebenden Steine
         hoverRowEl = document.createElement('div');
         hoverRowEl.className = 'hover-row';
         boardEl.insertBefore(hoverRowEl, boardRowsEl);
         
-        // Hover-Stück für den aktuellen Spieler erstellen
         hoverPiece = document.createElement('div');
         hoverPiece.className = 'hover-piece';
         hoverPiece.style.display = 'none';
         hoverPiece.style.backgroundColor = activePlayerColor;
         hoverRowEl.appendChild(hoverPiece);
         
-        // Hover-Stück für den Gegner erstellen
         opponentHoverPiece = document.createElement('div');
         opponentHoverPiece.className = 'hover-piece opponent-hover';
         opponentHoverPiece.style.display = 'none';
         hoverRowEl.appendChild(opponentHoverPiece);
         
-        // Erstelle das Spielbrett in der korrekten Orientierung (7x6)
-        // Beginne mit Zeile 0 (oberste Zeile) und arbeite nach unten
-        for (let row = 0; row < 6; row++) {
+        for (let row = 0; row < NUM_ROWS; row++) {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'board-row';
             rowDiv.dataset.row = row;
             
-            // 7 Zellen pro Zeile erstellen
-            for (let col = 0; col < 7; col++) {
+            for (let col = 0; col < NUM_COLUMNS; col++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.dataset.row = row;
@@ -120,33 +101,27 @@ document.addEventListener('DOMContentLoaded', function() {
             boardRowsEl.appendChild(rowDiv);
         }
         
-        // Hitboxes für Spalten hinzufügen
+        calculateColumnWidth();
         addColumnHitboxes();
     }
     
-    // Verbesserte Spalten-Hitboxes mit exakten Positionierungen
+    function calculateColumnWidth() {
+        colWidth = boardRowsEl.offsetWidth / NUM_COLUMNS;
+    }
+    
     function addColumnHitboxes() {
-        // Vorhandene Hitboxes entfernen (falls vorhanden)
         const existingHitboxes = boardEl.querySelectorAll('.column-hitbox');
         existingHitboxes.forEach(hitbox => hitbox.remove());
         
-        // Die tatsächliche Breite des Bretts ermitteln
-        const boardWidth = boardRowsEl.offsetWidth;
-        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
-        
-        // Neue Hitboxes mit exakten Positionierungen hinzufügen
-        for (let col = 0; col < 7; col++) {
+        for (let col = 0; col < NUM_COLUMNS; col++) {
             const hitbox = document.createElement('div');
             hitbox.className = 'column-hitbox';
             hitbox.dataset.column = col;
             
-            // Präzise Positionierung: exakt über jeder Spalte
-            hitbox.style.left = (col * colWidth) + 'px';
+            hitbox.style.left = (col * colWidth + 15) + 'px';
             hitbox.style.width = colWidth + 'px';
             
-            // Event-Listener für die Hitbox
             hitbox.addEventListener('click', () => {
-                // Nur Züge erlauben, wenn das Spiel aktiv ist (NICHT wenn es vorbei ist)
                 if (gameActive && !gameOver && currentPlayerUsername === username && !animationRunning) {
                     makeMoveInColumn(col);
                 }
@@ -154,10 +129,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             hitbox.addEventListener('mouseover', () => {
                 lastHoverColumn = col;
-                // Hover nur anzeigen, wenn das Spiel aktiv ist
                 if (gameActive && !gameOver && currentPlayerUsername === username && !animationRunning) {
                     showHoverPiece(col);
-                    // Sende hover-Information an andere Spieler
                     sendHoverUpdate(col);
                 }
             });
@@ -166,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 lastHoverColumn = null;
                 if (gameActive && currentPlayerUsername === username) {
                     hideHoverPiece();
-                    // Informiere Spieler, dass der Hover beendet wurde
                     sendHoverUpdate(null);
                 }
             });
@@ -175,11 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Spielbrett mit dem aktuellen Spielstand aktualisieren
     function updateBoardDisplay() {
         if (!gameBoard || !gameBoard.length) return;
         
-        // Alle Zellen basierend auf dem aktuellen Spielstand aktualisieren
         for (let row = 0; row < gameBoard.length; row++) {
             for (let col = 0; col < gameBoard[row].length; col++) {
                 const piece = gameBoard[row][col];
@@ -193,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Sende Hover-Update an andere Spieler
     function sendHoverUpdate(column) {
         if (gameSocket.isConnected()) {
             gameSocket.socket.emit('hoverUpdate', {
@@ -205,28 +174,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Hover-Stück anzeigen (verbessert mit präziserer Positionierung)
     function showHoverPiece(column) {
         if (!hoverPiece || !gameActive || gameOver || animationRunning) return;
         
-        // Keine Anzeige wenn der Spieler nicht am Zug ist
         if (currentPlayerUsername !== username) {
             hideHoverPiece();
             return;
         }
         
-        // Die tatsächliche Breite des Bretts ermitteln
-        const boardWidth = boardRowsEl.offsetWidth;
-        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
-        
-        // Exakte Position berechnen (präzise mittig in der Spalte)
         const leftPosition = (column * colWidth) + ((colWidth - CELL_WIDTH) / 2);
         
         hoverPiece.style.display = 'block';
         hoverPiece.style.left = leftPosition + 'px';
     }
     
-    // Gegnerisches Hover-Stück anzeigen (mit präziserer Positionierung)
     function showOpponentHoverPiece(column, color) {
         if (!opponentHoverPiece || !gameActive) return;
         
@@ -235,11 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Die tatsächliche Breite des Bretts ermitteln
-        const boardWidth = boardRowsEl.offsetWidth;
-        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
-        
-        // Exakte Position berechnen (präzise mittig in der Spalte)
         const leftPosition = (column * colWidth) + ((colWidth - CELL_WIDTH) / 2);
         
         opponentHoverPiece.style.display = 'block';
@@ -247,24 +203,20 @@ document.addEventListener('DOMContentLoaded', function() {
         opponentHoverPiece.style.left = leftPosition + 'px';
     }
     
-    // Hover-Stück verstecken
     function hideHoverPiece() {
         if (hoverPiece) {
             hoverPiece.style.display = 'none';
         }
     }
     
-    // Funktion zum Verstecken des gegnerischen Hover-Effekts
     function hideOpponentHoverPiece() {
         if (opponentHoverPiece) {
             opponentHoverPiece.style.display = 'none';
         }
     }
     
-    // Helferfunktion zur Aktualisierung der Hover-Sichtbarkeit basierend auf dem Spielzustand
     function updateHoverVisibility() {
         if (gameActive && !gameOver && currentPlayerUsername === username && !animationRunning) {
-            // Wenn der Mauszeiger über einer Spalte ist, den Hover-Effekt dort anzeigen
             const column = lastHoverColumn;
             if (column !== null) {
                 showHoverPiece(column);
@@ -274,81 +226,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Spielzug in einer Spalte
     function makeMoveInColumn(column) {
         gameSocket.makeMove(roomCode, column);
     }
     
-    // Verbesserte Animation für fallenden Spielstein (mit präziserer Positionierung)
     function placePiece(row, column, playerUsername, playerColor) {
         if (row === null || column === null || animationRunning) return;
         
         animationRunning = true;
         
-        // Hover-Effekt verstecken während der Animation
         hideHoverPiece();
         hideOpponentHoverPiece();
         
-        // Die tatsächliche Breite des Bretts ermitteln
-        const boardWidth = boardRowsEl.offsetWidth;
-        const colWidth = boardWidth / 7; // Exakte Breite pro Spalte
-        
-        // Präzise mittige Positionierung in der Spalte
-        // Finde die exakte Position der Zielzelle
         const targetCell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${column}"]`);
         if (!targetCell) {
             animationRunning = false;
             return;
         }
         
-        // Position relativ zum Board berechnen
         const cellRect = targetCell.getBoundingClientRect();
         const boardRect = boardEl.getBoundingClientRect();
         const cellCenterX = cellRect.left + (cellRect.width / 2) - boardRect.left;
         
-        // Zentriere den animierten Stein genau über der Zielzelle
         const leftPosition = cellCenterX - (CELL_WIDTH / 2);
         
-        // Erstelle den animierten Spielstein
         const animatedPiece = document.createElement('div');
         animatedPiece.className = 'animation-placeholder';
         animatedPiece.style.backgroundColor = playerColor;
         animatedPiece.style.left = leftPosition + 'px';
         
-        // Starte die Animation von der Position der Hover-Reihe aus
         const hoverRowTop = hoverRowEl.getBoundingClientRect().top - boardEl.getBoundingClientRect().top;
         animatedPiece.style.top = hoverRowTop + 'px';
         
-        // Füge den animierten Stein der Animation-Schicht hinzu
         animationLayer.appendChild(animatedPiece);
         
-        // Berechne die Zielposition für die Animation
         const targetTop = targetCell.getBoundingClientRect().top - boardEl.getBoundingClientRect().top;
         
-        // HTML5 Audio für Sound
         const audio = new Audio('../../assets/sounds/piece_drop.mp3');
         audio.volume = 0.3;
         audio.play().catch(e => console.log('Audio konnte nicht abgespielt werden:', e));
         
-        // Starte die Animation nach einem kurzen Delay
         setTimeout(() => {
             animatedPiece.style.transform = `translateY(${targetTop - hoverRowTop}px)`;
             
-            // Nach Abschluss der Animation den animierten Stein entfernen und die Zielzelle einfärben
             setTimeout(() => {
                 animationLayer.removeChild(animatedPiece);
                 targetCell.style.backgroundColor = playerColor;
                 animationRunning = false;
                 
-                // Hover-Effekt wieder anzeigen, falls der Spieler am Zug ist
                 updateHoverVisibility();
-            }, 600); // Entspricht der Animationsdauer in CSS
+            }, 600);
         }, 50);
     }
     
-    // Spieler-Liste aktualisieren
     function updatePlayerList(playersList) {
-        console.log("Aktualisiere Spielerliste:", playersList);
         playerListEl.innerHTML = '';
         
         playersList.forEach(player => {
@@ -369,10 +300,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (player.username === username) {
                 playerName.textContent += ' (Du)';
-                // Aktualisiere die aktive Spielerfarbe falls sie durch Konflikt geändert wurde
                 if (player.color !== userColor) {
                     activePlayerColor = player.color;
-                    // Aktualisiere auch die Farbe im Hover-Stück
                     if (hoverPiece) {
                         hoverPiece.style.backgroundColor = activePlayerColor;
                     }
@@ -383,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
             playerDiv.appendChild(playerName);
             playerListEl.appendChild(playerDiv);
             
-            // Host-Status speichern
             if (player.username === username && player.isHost) {
                 isHost = true;
                 gameControls.style.display = isHost ? 'block' : 'none';
@@ -391,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Spielstatus aktualisieren
     function updateGameStatus() {
         if (!gameActive && !gameOver) {
             gameStatusEl.textContent = 'Warte auf Spieler...';
@@ -403,7 +330,6 @@ document.addEventListener('DOMContentLoaded', function() {
         boardEl.classList.remove('inactive-game');
         
         if (gameOver) {
-            // Status für Spielende wird in gameOver-Handler gesetzt
             return;
         }
         
@@ -419,7 +345,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Gewinnzellen markieren
     function highlightWinningCells(cells) {
         cells.forEach(([row, col]) => {
             const cell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${col}"]`);
@@ -429,9 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Spiel zurücksetzen
     function resetGame() {
-        // Alle Zellen zurücksetzen
         const cells = boardEl.querySelectorAll('.cell');
         cells.forEach(cell => {
             cell.style.backgroundColor = 'white';
@@ -443,82 +366,56 @@ document.addEventListener('DOMContentLoaded', function() {
         updateGameStatus();
     }
     
-    // Verbindungsstatusanzeige aktualisieren
     function updateConnectionStatus(isDisconnected) {
         connectionStatusEl.style.display = isDisconnected ? 'block' : 'none';
     }
     
-    // Event-Listener für Socket.io-Ereignisse
-    
-    // Bei erfolgreicher Socket-Verbindung
     gameSocket.on('connect', () => {
-        console.log('Socket verbunden, trete Raum bei:', roomCode, username, userColor);
-        // Raum beitreten
         gameSocket.joinRoom(roomCode, username, userColor);
     });
     
-    // Spieler betritt den Raum
     gameSocket.on('playerJoined', (data) => {
-        console.log('Spieler beigetreten Event empfangen:', data);
         players = data.players;
         
-        // Verbindungsstatus aktualisieren
         updateConnectionStatus(false);
         
-        // Spieleranzahl prüfen (Vier Gewinnt benötigt genau 2 Spieler)
         gameActive = players.length === 2;
         
-        // Ersten Spieler als aktiven Spieler setzen, falls noch nicht geschehen
         if (gameActive && !currentPlayerUsername) {
             currentPlayerUsername = players[0].username;
         }
         
-        // Aktualisiere UI
         updatePlayerList(players);
         updateGameStatus();
     });
     
-    // Spieler verlässt den Raum
     gameSocket.on('playerLeft', (data) => {
-        console.log('Spieler verlassen Event empfangen:', data);
         players = data.players;
         currentPlayerUsername = data.currentPlayer;
         
-        // Spiel pausieren, wenn nicht genug Spieler da sind
         gameActive = players.length === 2;
         
         updatePlayerList(players);
         updateGameStatus();
     });
     
-    // Spieler hat die Verbindung verloren
     gameSocket.on('playerDisconnected', (data) => {
-        console.log('Spieler hat Verbindung verloren:', data);
-        // Zeige Verbindungsstatusanzeige
         updateConnectionStatus(true);
     });
     
-    // Spieler ist wieder verbunden
     gameSocket.on('playerReconnected', (data) => {
-        console.log('Spieler ist wieder verbunden:', data);
-        // Verstecke Verbindungsstatusanzeige
         updateConnectionStatus(false);
     });
     
-    // Hover-Update von anderen Spielern
     gameSocket.on('hoverUpdate', (data) => {
         const { column, username: hoverUsername, userColor: hoverColor } = data;
         
-        // Zeige nur den Hover-Effekt von anderen Spielern an
         if (hoverUsername !== username) {
             showOpponentHoverPiece(column, hoverColor);
         }
     });
     
-    // Spielzug aktualisieren
     gameSocket.on('moveUpdate', (data) => {
-        console.log('Spielzug-Update empfangen:', data);
-        
         if (data.player) {
             placePiece(data.row, data.column, data.player.username, data.player.color);
         }
@@ -526,20 +423,17 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPlayerUsername = data.nextPlayer;
         gameBoard = data.gameState.board;
         
-        // Aktualisiere den Spielstatus nach der Animation
         setTimeout(() => {
             updateBoardDisplay();
             updatePlayerList(players);
             updateGameStatus();
-            updateHoverVisibility(); // Hover-Effekt basierend auf dem neuen Zustand aktualisieren
+            updateHoverVisibility();
         }, 650);
     });
     
-    // Spielende
     gameSocket.on('gameOver', (data) => {
-        console.log('Spielende empfangen:', data);
         gameActive = false;
-        gameOver = true; // Wichtig: Markiere das Spiel als beendet
+        gameOver = true;
         
         if (data.winner) {
             gameStatusEl.textContent = data.winner === username ? 
@@ -551,24 +445,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         gameStatusEl.className = 'game-status winner-message';
         
-        // Brett nicht deaktivieren, aber keine weiteren Züge erlauben
         boardEl.classList.remove('inactive-game');
-        hideHoverPiece(); // Hover-Effekt ausblenden
+        hideHoverPiece();
         
         if (data.winningCells && data.winningCells.length > 0) {
-            // Markiere Gewinnzellen nach Ende der Animation
             setTimeout(() => {
                 highlightWinningCells(data.winningCells);
             }, 700);
         }
         
-        // Neustart-Button anzeigen (nur für Host)
         gameControls.style.display = isHost ? 'block' : 'none';
     });
     
-    // Spielneustart
     gameSocket.on('gameRestarted', (data) => {
-        console.log('Spielneustart empfangen:', data);
         resetGame();
         gameBoard = data.gameState.board;
         currentPlayerUsername = data.currentPlayer;
@@ -577,31 +466,22 @@ document.addEventListener('DOMContentLoaded', function() {
         updateGameStatus();
     });
     
-    // Aktuellen Spielstand empfangen (für reconnects)
     gameSocket.on('gameState', (data) => {
-        console.log('Aktuellen Spielstand empfangen:', data);
         gameBoard = data.gameState.board;
         currentPlayerUsername = data.currentPlayer;
         
-        // Aktualisiere das Brett mit dem aktuellen Spielstand
         updateBoardDisplay();
         updatePlayerList(data.players);
         updateGameStatus();
     });
     
-    // Fehler beim Beitreten
     gameSocket.on('joinError', (error) => {
-        console.error('Fehler beim Beitreten zum Raum:', error);
         alert('Fehler: ' + error);
         window.location.href = '/';
     });
     
-    // Button-Event-Listener
     backButton.addEventListener('click', () => {
-        // Raum verlassen
         gameSocket.leaveRoom(roomCode);
-        
-        // Zurück zur Hauptseite
         window.location.href = '/';
     });
     
@@ -611,32 +491,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Fenster-Resize-Event hinzufügen, um Hitboxes neu zu berechnen
     window.addEventListener('resize', () => {
-        // Kurze Verzögerung, um sicherzustellen, dass die DOM-Änderungen abgeschlossen sind
         setTimeout(() => {
+            calculateColumnWidth();
             addColumnHitboxes();
             
-            // Hover-Effekt aktualisieren, falls nötig
             if (lastHoverColumn !== null) {
                 showHoverPiece(lastHoverColumn);
             }
         }, 200);
     });
     
-    // Spielbrett initialisieren
     initializeBoard();
     updateGameStatus();
     
-    // Spiel-Status explizit anfragen (für Reconnect-Szenario)
     if (gameSocket.isConnected()) {
         gameSocket.socket.emit('requestGameState', { roomCode });
     }
-    
-    // DEBUG: Status anzeigen
-    console.log('Spielseite geladen', {
-        roomCode,
-        username,
-        userColor
-    });
 });

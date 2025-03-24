@@ -1,6 +1,3 @@
-/* Optimierte Styles für Vier Gewinnt */
-
-/* Grundlegende Variablen für gemeinsame Werte */
 :root {
     --cell-size: 70px;
     --cell-margin: 7px;
@@ -11,7 +8,6 @@
     --warning-color: #f39c12;
 }
 
-/* Spielbrett-Container */
 .game-board {
     display: inline-block;
     background-color: var(--board-color);
@@ -20,17 +16,15 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     margin-top: 30px;
     position: relative;
+    z-index: 5;
 }
 
-/* Z-Index-Hierarchie für korrekte Überlagerung */
-.game-board { z-index: 5; position: relative; } /* Brett-Hintergrund (blau) */
-.game-board .column-hitbox { z-index: 50; } /* Oberste Ebene für Klicks */
-.game-board .hover-row { z-index: 40; } /* Für Hover-Stücke */
-.game-board .cell { z-index: 30; } /* Weiße Löcher */
-.game-board .animation-layer { z-index: 20; } /* Für Animationen (hinter dem Brett, vor den Löchern) */
-.game-board .board-rows { z-index: 10; } /* Grundebene des Bretts */
+.game-board .column-hitbox { z-index: 50; }
+.game-board .hover-row { z-index: 40; }
+.game-board .cell { z-index: 30; }
+.game-board .animation-layer { z-index: 20; }
+.game-board .board-rows { z-index: 10; }
 
-/* Animations-Schicht für fallende Steine */
 .animation-layer {
     position: absolute;
     top: 0;
@@ -40,7 +34,6 @@
     pointer-events: none;
 }
 
-/* Zeilen und Zellen */
 .board-rows {
     display: flex;
     flex-direction: column;
@@ -52,7 +45,6 @@
     flex-direction: row;
 }
 
-/* Allgemeine Styles für alle runden Elemente (Chips) */
 .cell, .hover-piece, .animation-placeholder {
     width: var(--cell-size);
     height: var(--cell-size);
@@ -60,7 +52,6 @@
     position: relative;
 }
 
-/* Zellen im Brett */
 .cell {
     background-color: var(--cell-color);
     margin: var(--cell-margin);
@@ -68,16 +59,13 @@
     cursor: pointer;
 }
 
-/* Unsichtbare Hitbox für die ganze Spalte */
 .column-hitbox {
     position: absolute;
     top: 0;
     bottom: 0;
     cursor: pointer;
-    /* Breite und Position werden in JavaScript dynamisch berechnet */
 }
 
-/* Hover-Reihe über dem Spielbrett */
 .hover-row {
     height: var(--cell-size);
     position: relative;
@@ -87,34 +75,29 @@
     margin-bottom: var(--cell-margin);
 }
 
-/* Hover-Stücke */
 .hover-piece {
     position: absolute;
     opacity: 0.5;
     transition: left 0.2s ease;
 }
 
-/* Gegnerischer Hover-Effekt */
 .opponent-hover {
     opacity: 0.3;
 }
 
-/* Platzhalter für die Animation - Muss undurchsichtig sein */
 .animation-placeholder {
     position: absolute;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-    opacity: 1 !important; /* Vollständig undurchsichtig */
+    opacity: 1;
     border: none;
     box-shadow: none;
 }
 
-/* Gewinnzellen hervorheben */
 .winning-cell {
     animation: pulse 0.8s infinite alternate;
     box-shadow: 0 0 10px white, 0 0 15px white;
 }
 
-/* Spielzustand-Styles */
 .game-status {
     font-size: 18px;
     font-weight: bold;
@@ -131,7 +114,6 @@
     color: var(--inactive-turn-color);
 }
 
-/* Statusmeldung für Verbindungsverlust */
 .connection-status {
     background-color: var(--warning-color);
     color: white;
@@ -143,13 +125,6 @@
     display: none;
 }
 
-/* Spezifische Animation-Positionierung für den "hinter dem Brett" Effekt */
-.animation-placeholder {
-    position: relative;
-    z-index: 20; /* Muss mit dem animation-layer übereinstimmen */
-}
-
-/* Animationen */
 @keyframes highlight {
     0%, 100% { opacity: 0.7; }
     50% { opacity: 1; }
@@ -165,7 +140,6 @@
     pointer-events: none;
 }
 
-/* Responsive Anpassungen für verschiedene Bildschirmgrößen */
 @media (max-width: 768px) {
     :root {
         --cell-size: 50px;
