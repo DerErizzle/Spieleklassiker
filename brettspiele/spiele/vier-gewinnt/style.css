@@ -3,7 +3,7 @@
 /* Spielbrett-Container */
 .game-board {
     display: inline-block;
-    background-color: transparent; /* Hintergrund wird vom board-background Element bereitgestellt */
+    background-color: #1a4d7c; /* Dunkleres Blau */
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -11,26 +11,13 @@
     position: relative;
 }
 
-/* Spielbrett-Hintergrund */
-.board-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #1a4d7c; /* Dunkleres Blau statt #3498db */
-    border-radius: 10px;
-    z-index: 2; /* Über der Animation-Schicht */
-}
-
-/* Animations-Schicht für fallende Steine (hinter dem Brett) */
+/* Animations-Schicht für fallende Steine */
 .animation-layer {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 1; /* Unter dem Brett */
     pointer-events: none;
 }
 
@@ -39,7 +26,6 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    z-index: 3; /* Über dem Brett-Hintergrund */
 }
 
 .board-row {
@@ -57,6 +43,7 @@
     cursor: pointer;
     transition: background-color 0.1s;
     position: relative;
+    z-index: 2; /* Über der Animation */
 }
 
 /* Unsichtbare Hitbox für die ganze Spalte - wird jetzt präzise in JavaScript platziert */
@@ -103,6 +90,7 @@
     height: 70px;
     border-radius: 50%;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    z-index: 1; /* Unter den Zellen */
     /* Position wird in JavaScript dynamisch berechnet */
 }
 
