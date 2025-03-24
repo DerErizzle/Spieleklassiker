@@ -195,6 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 1; i <= 13; i++) {
             const cardPlaceholder = document.createElement('div');
             cardPlaceholder.className = 'card-placeholder';
+            cardPlaceholder.dataset.value = i;
             
             // Wenn dieser Wert im Spielfeld vorhanden ist, zeige die Karte
             if (values.includes(i)) {
