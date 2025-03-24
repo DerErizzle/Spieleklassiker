@@ -37,5 +37,5 @@ function isUserLoggedIn() {
 function logoutUser() {
     deleteCookie('username');
     deleteCookie('userColor');
-    window.location.href = 'login.html';
+    window.location.href = '/login';
 }

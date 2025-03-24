@@ -26,6 +26,45 @@ function debugLog(message, data = {}) {
 // Statische Dateien bereitstellen
 app.use(express.static(path.join(__dirname, '..')));
 
+// Hauptseite (statt index.html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
+// Login-Seite (statt login.html)
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'login.html'));
+});
+
+// Spiel-Routen (z.B. /spiele/vier-gewinnt)
+app.get('/spiele/:spieltyp', (req, res) => {
+    const spieltyp = req.params.spieltyp;
+    if (spieltyp === 'vier-gewinnt') {
+        res.sendFile(path.join(__dirname, '..', 'spiele', 'vier-gewinnt', 'index.html'));
+    } else {
+        // Für zukünftige Spiele kannst du hier weitere else-if-Blöcke hinzufügen
+        res.status(404).send('Spiel nicht gefunden');
+    }
+});
+
+// Debug-Route
+app.get('/debug', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'debug.html'));
+});
+
+// Hilfsrouten für Debugging (behalte diesen Block)
+if (DEBUG) {
+    // Liste aller Räume als JSON abrufen
+    app.get('/debug/rooms', (req, res) => {
+        // ... bestehender Code ...
+    });
+}
+
+// Weiterleitung aller anderen Routen zur index.html (Catch-All-Handler)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
 // Spieleräume und aktive Spiele
 const rooms = {};
 

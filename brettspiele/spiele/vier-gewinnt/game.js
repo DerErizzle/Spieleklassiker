@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Überprüfen, ob der Benutzer eingeloggt ist
     if (!isUserLoggedIn()) {
-        window.location.href = '../../login.html';
+        window.location.href = '/login';
         return;
     }
     
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Raumcode abrufen
     const roomCode = sessionStorage.getItem('currentRoom');
     if (!roomCode) {
-        window.location.href = '../../index.html';
+        window.location.href = '/';
         return;
     }
     
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gameSocket.on('joinError', (error) => {
         console.error('Fehler beim Beitreten zum Raum:', error);
         alert('Fehler: ' + error);
-        window.location.href = '../../index.html';
+        window.location.href = '/';
     });
     
     // Button-Event-Listener
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gameSocket.leaveRoom(roomCode);
         
         // Zurück zur Hauptseite
-        window.location.href = '../../index.html';
+        window.location.href = '/';
     });
     
     restartButton.addEventListener('click', () => {
