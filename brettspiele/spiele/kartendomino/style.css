@@ -3,7 +3,9 @@
     margin: 0 auto;
     padding: 20px;
     width: 100%;
-}:root {
+}
+
+:root {
     --board-color: #1a7c2b;
     --active-turn-color: #27ae60;
     --inactive-turn-color: #7f8c8d;
@@ -122,9 +124,18 @@
     gap: 5px;
     min-height: 60px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
     padding: 0 10px;
+}
+
+/* Card placeholder for fixed positions */
+.card-placeholder {
+    width: var(--card-width);
+    height: var(--card-height);
+    display: inline-block;
+    margin: 0 2px;
+    position: relative;
 }
 
 /* Spielerkarten */
@@ -149,7 +160,7 @@
 
 .player-hand .card {
     margin-left: -30px;
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s, margin-top 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, margin-top 0.2s;
     position: relative;
     z-index: 1;
 }
@@ -168,7 +179,7 @@
     height: var(--card-height);
     border-radius: var(--card-border-radius);
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     background-color: white;
     background-size: cover;
     cursor: pointer;
@@ -181,7 +192,7 @@
 }
 
 .card.not-playable {
-    opacity: 0.6;
+    filter: grayscale(100%);
     cursor: not-allowed;
 }
 

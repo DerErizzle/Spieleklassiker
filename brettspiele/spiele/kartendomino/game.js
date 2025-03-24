@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let passCount = 0;
     let surrendered = false;
     let gameOver = false;
+    let surrenderedPlayers = [];
     
     // UI initialisieren
     usernameDisplayEl.textContent = username;
@@ -97,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gameTableEl.style.display = 'none';
     passButton.disabled = true;
     surrenderButton.disabled = true;
+    surrenderButton.style.display = 'none';
     
     // Spielbrett initial rendern
     renderBoard();
@@ -154,8 +156,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const canPass = passCount < 3; // Immer erlaubt wenn noch Pässe übrig
         const canSurrender = !canPlayerPlayCards(board, hand) && passCount >= 3;
         
-        passButton.disabled = !isCurrentPlayer || !canPass || !gameActive || gameOver;
-        surrenderButton.disabled = !isCurrentPlayer || !canSurrender || !gameActive || gameOver;
+        // Zeige nur den Surrender-Button, wenn man 3x gepasst hat und nicht spielen kann
+        if (canSurrender && isCurrentPlayer && gameActive && !gameOver) {
+            passButton.style.display = 'none';
+            surrenderButton.style.display = 'inline-block';
+            surrenderButton.disabled = false;
+        } else {
+            passButton.style.display = 'inline-block';
+            surrenderButton.style.display = 'none';
+            passButton.disabled = !isCurrentPlayer || !canPass || !gameActive || gameOver;
+        }
     }
     
     /**
@@ -176,26 +186,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * Rendert die Karten einer Farbe
+     * Rendert die Karten einer Farbe mit festen Positionen
      */
     function renderSuit(container, suit, values) {
         container.innerHTML = '';
         
-        // Sortiere die Werte
-        const sortedValues = [...values].sort((a, b) => a - b);
-        
-        // Erstelle für jeden Wert eine Karte
-        sortedValues.forEach(value => {
-            const cardEl = document.createElement('div');
-            cardEl.className = 'board-card';
+        // Erstelle Platzhalter für alle möglichen Kartenwerte (1-13)
+        for (let i = 1; i <= 13; i++) {
+            const cardPlaceholder = document.createElement('div');
+            cardPlaceholder.className = 'card-placeholder';
             
-            // Kartenbild vom CDN laden
-            const cardValue = getCardValueName(value);
-            const cardImageUrl = getCdnUrl(`/games/kartendomino/${cardValue}_of_${suit}.png`);
-            cardEl.style.backgroundImage = `url('${cardImageUrl}')`;
+            // Wenn dieser Wert im Spielfeld vorhanden ist, zeige die Karte
+            if (values.includes(i)) {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'board-card';
+                
+                // Kartenbild vom CDN laden
+                const cardValue = getCardValueName(i);
+                const cardImageUrl = getCdnUrl(`/games/kartendomino/${cardValue}_of_${suit}.png`);
+                cardEl.style.backgroundImage = `url('${cardImageUrl}')`;
+                
+                cardPlaceholder.appendChild(cardEl);
+            }
             
-            container.appendChild(cardEl);
-        });
+            container.appendChild(cardPlaceholder);
+        }
     }
     
     /**
@@ -387,12 +402,46 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /**
      * Prüft, ob eine Karte spielbar ist
+     * Implementiert die neue Regel: Nach Aufgabe eines Spielers müssen alle Karten zwischen 7 und
+     * der neuen Karte bereits auf dem Tisch liegen
      */
     function isCardPlayable(board, card) {
         const { suit, value } = card;
         const suitValues = board[suit];
         
-        return suitValues.includes(value - 1) || suitValues.includes(value + 1);
+        // Grundregel: Karte muss zu einer bereits auf dem Tisch liegenden Karte passen
+        const isAdjacent = suitValues.includes(value - 1) || suitValues.includes(value + 1);
+        
+        if (!isAdjacent) {
+            return false;
+        }
+        
+        // Wenn jemand bereits aufgegeben hat, muss geprüft werden, ob alle Karten 
+        // zwischen 7 und der neuen Karte bereits auf dem Tisch liegen
+        if (surrenderedPlayers.length > 0) {
+            const middleValue = 7;
+            
+            // Wenn die Karte kleiner als 7 ist
+            if (value < middleValue) {
+                // Prüfe alle Karten zwischen der neuen Karte und 7
+                for (let i = value + 1; i < middleValue; i++) {
+                    if (!suitValues.includes(i)) {
+                        return false; // Lücke in der Sequenz gefunden
+                    }
+                }
+            } 
+            // Wenn die Karte größer als 7 ist
+            else if (value > middleValue) {
+                // Prüfe alle Karten zwischen 7 und der neuen Karte
+                for (let i = middleValue + 1; i < value; i++) {
+                    if (!suitValues.includes(i)) {
+                        return false; // Lücke in der Sequenz gefunden
+                    }
+                }
+            }
+        }
+        
+        return true;
     }
     
     /**
@@ -593,10 +642,35 @@ document.addEventListener('DOMContentLoaded', function() {
             hand = hand.filter(card => 
                 !(card.suit === playedCard.suit && card.value === playedCard.value)
             );
+        } else if (data.type === 'surrender') {
+            // Ein Spieler hat aufgegeben, füge ihn zur Liste der aufgegebenen Spieler hinzu
+            if (!surrenderedPlayers.includes(data.player)) {
+                surrenderedPlayers.push(data.player);
+            }
+            
+            // Wenn wir der aufgebende Spieler sind, leere die Hand
+            if (data.player === username) {
+                hand = [];
+                surrendered = true;
+            }
         }
         
         renderBoard();
         renderPlayerHand();
+        
+        // Aktualisiere die Karten-Anzahl und Pass-Zähler der Spieler
+        if (data.type === 'play') {
+            const playerObj = players.find(p => p.username === data.player);
+            if (playerObj) {
+                playerObj.cardsLeft = data.remainingCards;
+            }
+        } else if (data.type === 'pass') {
+            const playerObj = players.find(p => p.username === data.player);
+            if (playerObj) {
+                playerObj.passCount = data.passCount;
+            }
+        }
+        
         renderOpponents();
         updatePlayerList(players);
         updateGameStatus();
@@ -607,23 +681,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/card-play.mp3'));
             audio.volume = 0.3;
             audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
-            
-            // Aktualisiere die Karten-Anzahl dieses Spielers
-            const playerObj = players.find(p => p.username === data.player);
-            if (playerObj) {
-                playerObj.cardsLeft = data.remainingCards;
-            }
         } else if (data.type === 'pass') {
             // Pass-Geräusch
             const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/pass.mp3'));
             audio.volume = 0.3;
             audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
-            
-            // Aktualisiere den Pass-Zähler dieses Spielers
-            const playerObj = players.find(p => p.username === data.player);
-            if (playerObj) {
-                playerObj.passCount = data.passCount;
-            }
         }
     });
     
@@ -645,6 +707,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hand = [];
         passCount = 0;
         surrendered = false;
+        surrenderedPlayers = [];
         board = {
             spades: [7],
             clubs: [7],
@@ -675,6 +738,16 @@ document.addEventListener('DOMContentLoaded', function() {
         passCount = data.passCount;
         surrendered = data.surrendered;
         playerIndex = data.playerIndex;
+        
+        // Rekonstruiere die Liste der aufgegebenen Spieler
+        surrenderedPlayers = [];
+        if (data.players) {
+            data.players.forEach(player => {
+                if (player.surrendered) {
+                    surrenderedPlayers.push(player.username);
+                }
+            });
+        }
         
         renderBoard();
         renderPlayerHand();
