@@ -42,7 +42,27 @@ function generateRoomCode() {
 // Socket.io-Verbindungshandler
 io.on('connection', (socket) => {
     debugLog('Neuer Benutzer verbunden:', { socketId: socket.id });
-    
+  
+    // Hover-Update
+    socket.on('hoverUpdate', (data) => {
+        const { roomCode, column, username, userColor } = data;
+        
+        if (!rooms[roomCode]) {
+            return;
+        }
+        
+        // Nur an andere Spieler im gleichen Raum senden
+        socket.to(roomCode).emit('hoverUpdate', {
+            column,
+            username,
+            userColor
+        });
+        
+        if (DEBUG) {
+            debugLog('Hover-Update gesendet:', { roomCode, username, column });
+        }
+    });
+
     // Raum erstellen
     socket.on('createRoom', (data) => {
         const roomCode = generateRoomCode();

@@ -1,5 +1,5 @@
 /**
- * Vier Gewinnt - Spiellogik
+ * Vier Gewinnt - Spiellogik (korrigierte Version)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -54,67 +54,120 @@ document.addEventListener('DOMContentLoaded', function() {
     let isHost = false;
     let gameBoard = [];
     let hoverPiece = null;
+    let opponentHoverPiece = null;
     
-    // Spielbrett initialisieren
+    // Spielbrett initialisieren (KORRIGIERT)
     function initializeBoard() {
         boardEl.innerHTML = '';
         
-        // 7 Spalten erstellen
-        for (let col = 0; col < 7; col++) {
-            const columnDiv = document.createElement('div');
-            columnDiv.className = 'board-column';
-            columnDiv.dataset.column = col;
+        // Container für die Zeilen erstellen
+        const boardRows = document.createElement('div');
+        boardRows.className = 'board-rows';
+        boardEl.appendChild(boardRows);
+        
+        // Erstelle das Spielbrett in der korrekten Orientierung (7x6)
+        // Beginne mit Zeile 0 (oberste Zeile) und arbeite nach unten
+        for (let row = 0; row < 6; row++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'board-row';
+            rowDiv.dataset.row = row;
             
-            // 6 Zellen pro Spalte erstellen
-            for (let row = 0; row < 6; row++) {
+            // 7 Zellen pro Zeile erstellen
+            for (let col = 0; col < 7; col++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.dataset.row = row;
                 cell.dataset.column = col;
-                columnDiv.appendChild(cell);
+                
+                // Klick-Event auf die Zelle (delegiert den Klick auf die Spalte)
+                cell.addEventListener('click', () => {
+                    if (gameActive && currentPlayerUsername === username) {
+                        makeMoveInColumn(col);
+                    }
+                });
+                
+                // Hover-Events
+                cell.addEventListener('mouseover', () => {
+                    if (gameActive && currentPlayerUsername === username) {
+                        showHoverPiece(col);
+                        // Sende hover-Information an andere Spieler
+                        sendHoverUpdate(col);
+                    }
+                });
+                
+                cell.addEventListener('mouseout', () => {
+                    if (gameActive && currentPlayerUsername === username) {
+                        hideHoverPiece();
+                        // Informiere Spieler, dass der Hover beendet wurde
+                        sendHoverUpdate(null);
+                    }
+                });
+                
+                rowDiv.appendChild(cell);
             }
             
-            // Event-Listener für Spalte
-            columnDiv.addEventListener('click', () => {
-                if (gameActive && currentPlayerUsername === username) {
-                    makeMoveInColumn(col);
-                }
-            });
-            
-            // Hover-Effekt
-            columnDiv.addEventListener('mouseover', () => {
-                if (gameActive && currentPlayerUsername === username) {
-                    showHoverPiece(col);
-                }
-            });
-            
-            columnDiv.addEventListener('mouseout', () => {
-                hideHoverPiece();
-            });
-            
-            boardEl.appendChild(columnDiv);
+            boardRows.appendChild(rowDiv);
         }
         
-        // Hover-Stück erstellen
+        // Hover-Reihe über dem Brett erstellen
+        const hoverRow = document.createElement('div');
+        hoverRow.className = 'hover-row';
+        boardEl.insertBefore(hoverRow, boardRows);
+        
+        // Hover-Stück für den aktuellen Spieler erstellen
         hoverPiece = document.createElement('div');
         hoverPiece.className = 'hover-piece';
         hoverPiece.style.display = 'none';
         hoverPiece.style.backgroundColor = userColor;
-        boardEl.appendChild(hoverPiece);
+        hoverRow.appendChild(hoverPiece);
+        
+        // Hover-Stück für den Gegner erstellen
+        opponentHoverPiece = document.createElement('div');
+        opponentHoverPiece.className = 'hover-piece opponent-hover';
+        opponentHoverPiece.style.display = 'none';
+        hoverRow.appendChild(opponentHoverPiece);
     }
     
-    // Hover-Stück anzeigen
+    // Sende Hover-Update an andere Spieler
+    function sendHoverUpdate(column) {
+        if (gameSocket.isConnected()) {
+            gameSocket.socket.emit('hoverUpdate', {
+                roomCode: roomCode,
+                column: column,
+                username: username,
+                userColor: userColor
+            });
+        }
+    }
+    
+    // Hover-Stück anzeigen (KORRIGIERT)
     function showHoverPiece(column) {
         if (!hoverPiece || !gameActive) return;
         
-        const columnEl = boardEl.querySelector(`.board-column[data-column="${column}"]`);
-        if (columnEl) {
-            const columnRect = columnEl.getBoundingClientRect();
-            const boardRect = boardEl.getBoundingClientRect();
-            
-            hoverPiece.style.display = 'block';
-            hoverPiece.style.left = (columnRect.left - boardRect.left + 7) + 'px';
+        // Berechne die Position basierend auf der Spalte
+        const cellWidth = 84; // 70px Breite + 14px Margin (7px auf jeder Seite)
+        const leftPosition = column * cellWidth + 7; // +7px für den linken Rand
+        
+        hoverPiece.style.display = 'block';
+        hoverPiece.style.left = leftPosition + 'px';
+    }
+    
+    // Gegnerisches Hover-Stück anzeigen
+    function showOpponentHoverPiece(column, color) {
+        if (!opponentHoverPiece || !gameActive) return;
+        
+        if (column === null) {
+            opponentHoverPiece.style.display = 'none';
+            return;
         }
+        
+        // Berechne die Position basierend auf der Spalte
+        const cellWidth = 84; // 70px Breite + 14px Margin
+        const leftPosition = column * cellWidth + 7;
+        
+        opponentHoverPiece.style.display = 'block';
+        opponentHoverPiece.style.backgroundColor = color;
+        opponentHoverPiece.style.left = leftPosition + 'px';
     }
     
     // Hover-Stück verstecken
@@ -129,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         gameSocket.makeMove(roomCode, column);
     }
     
-    // Spielstein setzen
+    // Spielstein setzen (KORRIGIERT)
     function placePiece(row, column, playerUsername, playerColor) {
         if (row === null || column === null) return;
         
@@ -139,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Zelle färben
             cell.style.backgroundColor = playerColor;
             
-            // Animation hinzufügen
+            // Animation hinzufügen (geändert auf drop-animation)
             cell.classList.add('drop-animation');
             
             // HTML5 Audio für Sound
@@ -276,6 +329,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         updatePlayerList(players);
         updateGameStatus();
+    });
+    
+    // Hover-Update von anderen Spielern
+    gameSocket.on('hoverUpdate', (data) => {
+        const { column, username: hoverUsername, userColor: hoverColor } = data;
+        
+        // Zeige nur den Hover-Effekt von anderen Spielern an
+        if (hoverUsername !== username) {
+            showOpponentHoverPiece(column, hoverColor);
+        }
     });
     
     // Spielzug aktualisieren

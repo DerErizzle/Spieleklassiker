@@ -1,27 +1,86 @@
-/* Zusätzliche Styles für Vier Gewinnt */
+/* Korrigierte Styles für Vier Gewinnt */
 
+/* Spielbrett-Container */
 .game-board {
+    display: inline-block;
+    background-color: #3498db;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    margin-top: 30px;
     position: relative;
-    cursor: pointer;
 }
 
-.column-hover {
-    position: absolute;
-    top: -80px;
+/* Zeilen und Zellen */
+.board-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.board-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.cell {
+    width: 70px;
+    height: 70px;
+    background-color: white;
+    border-radius: 50%;
+    margin: 7px;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    position: relative;
+}
+
+/* Hover-Reihe über dem Spielbrett */
+.hover-row {
+    height: 70px;
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 7px;
+}
+
+/* Hover-Stücke */
+.hover-piece {
     width: 70px;
     height: 70px;
     border-radius: 50%;
+    position: absolute;
     opacity: 0.5;
-    transition: transform 0.1s;
-    pointer-events: none;
-    z-index: 10;
+    transition: left 0.2s ease;
 }
 
+/* Gegnerischer Hover-Effekt */
+.opponent-hover {
+    opacity: 0.3;
+}
+
+/* Animation für fallendes Spielstück */
+.drop-animation {
+    animation: dropPiece 0.5s ease-in;
+}
+
+@keyframes dropPiece {
+    0% {
+        transform: translateY(-300%);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Gewinnzellen hervorheben */
 .winning-cell {
     animation: pulse 0.8s infinite alternate;
     box-shadow: 0 0 10px white, 0 0 15px white;
 }
 
+/* Spielzustand-Styles */
 .game-status {
     font-size: 18px;
     font-weight: bold;
@@ -44,33 +103,49 @@
     100% { opacity: 0.7; }
 }
 
+@keyframes pulse {
+    0% { box-shadow: 0 0 5px white, 0 0 10px white; }
+    100% { box-shadow: 0 0 15px white, 0 0 20px white; }
+}
+
 .inactive-game {
     opacity: 0.7;
     pointer-events: none;
 }
 
-.drop-animation {
-    animation: drop 0.5s ease-in;
-}
-
-@keyframes drop {
-    0% { transform: translateY(-300px); }
-    100% { transform: translateY(0); }
-}
-
 /* Responsive Anpassungen */
 @media (max-width: 768px) {
-    .column-hover {
-        top: -60px;
+    .cell {
         width: 50px;
         height: 50px;
+        margin: 5px;
+    }
+    
+    .hover-piece {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .hover-row {
+        height: 50px;
+        margin-bottom: 5px;
     }
 }
 
 @media (max-width: 480px) {
-    .column-hover {
-        top: -50px;
+    .cell {
         width: 40px;
         height: 40px;
+        margin: 4px;
+    }
+    
+    .hover-piece {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .hover-row {
+        height: 40px;
+        margin-bottom: 4px;
     }
 }
