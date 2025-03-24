@@ -1,15 +1,32 @@
-/* Korrigierte Styles für Vier Gewinnt */
+/* Optimierte Styles für Vier Gewinnt */
+
+/* Grundlegende Variablen für gemeinsame Werte */
+:root {
+    --cell-size: 70px;
+    --cell-margin: 7px;
+    --board-color: #1a4d7c;
+    --active-turn-color: #27ae60;
+    --inactive-turn-color: #7f8c8d;
+    --cell-color: white;
+    --warning-color: #f39c12;
+}
 
 /* Spielbrett-Container */
 .game-board {
     display: inline-block;
-    background-color: #1a4d7c; /* Dunkleres Blau */
+    background-color: var(--board-color);
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     margin-top: 30px;
     position: relative;
 }
+
+/* Z-Index-Hierarchie für korrekte Überlagerung */
+.game-board .column-hitbox { z-index: 40; } /* Oberste Ebene für Klicks */
+.game-board .animation-layer { z-index: 30; } /* Für Animationen */
+.game-board .hover-row { z-index: 20; } /* Für Hover-Stücke */
+.game-board .board-rows { z-index: 10; } /* Unterste Ebene für das eigentliche Brett */
 
 /* Animations-Schicht für fallende Steine */
 .animation-layer {
@@ -33,49 +50,46 @@
     flex-direction: row;
 }
 
-/* Verbesserte Zellen ohne Lücken */
-.cell {
-    width: 70px;
-    height: 70px;
-    background-color: white;
+/* Allgemeine Styles für alle runden Elemente (Chips) */
+.cell, .hover-piece, .animation-placeholder {
+    width: var(--cell-size);
+    height: var(--cell-size);
     border-radius: 50%;
-    margin: 7px;
-    cursor: pointer;
-    transition: background-color 0.1s;
     position: relative;
-    z-index: 2; /* Über der Animation */
 }
 
-/* Unsichtbare Hitbox für die ganze Spalte - wird jetzt präzise in JavaScript platziert */
+/* Zellen im Brett */
+.cell {
+    background-color: var(--cell-color);
+    margin: var(--cell-margin);
+    transition: background-color 0.1s;
+    cursor: pointer;
+}
+
+/* Unsichtbare Hitbox für die ganze Spalte */
 .column-hitbox {
     position: absolute;
     top: 0;
     bottom: 0;
-    z-index: 10;
     cursor: pointer;
     /* Breite und Position werden in JavaScript dynamisch berechnet */
 }
 
 /* Hover-Reihe über dem Spielbrett */
 .hover-row {
-    height: 70px;
+    height: var(--cell-size);
     position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-bottom: 7px;
-    z-index: 5;
+    margin-bottom: var(--cell-margin);
 }
 
 /* Hover-Stücke */
 .hover-piece {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
     position: absolute;
     opacity: 0.5;
     transition: left 0.2s ease;
-    /* Position wird in JavaScript dynamisch berechnet */
 }
 
 /* Gegnerischer Hover-Effekt */
@@ -83,15 +97,13 @@
     opacity: 0.3;
 }
 
-/* Platzhalter für die Animation */
+/* Platzhalter für die Animation - Muss undurchsichtig sein */
 .animation-placeholder {
     position: absolute;
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-    z-index: 1;
-    opacity: 1;
+    opacity: 1 !important; /* Vollständig undurchsichtig */
+    border: none;
+    box-shadow: none;
 }
 
 /* Gewinnzellen hervorheben */
@@ -109,17 +121,17 @@
 }
 
 .your-turn {
-    color: #27ae60;
+    color: var(--active-turn-color);
     animation: highlight 1.5s infinite;
 }
 
 .not-your-turn {
-    color: #7f8c8d;
+    color: var(--inactive-turn-color);
 }
 
 /* Statusmeldung für Verbindungsverlust */
 .connection-status {
-    background-color: #f39c12;
+    background-color: var(--warning-color);
     color: white;
     padding: 10px;
     border-radius: 5px;
@@ -129,10 +141,10 @@
     display: none;
 }
 
+/* Animationen */
 @keyframes highlight {
-    0% { opacity: 0.7; }
+    0%, 100% { opacity: 0.7; }
     50% { opacity: 1; }
-    100% { opacity: 0.7; }
 }
 
 @keyframes pulse {
@@ -145,49 +157,17 @@
     pointer-events: none;
 }
 
-/* Responsive Anpassungen - Breiten und Positionen werden jetzt in JavaScript dynamisch berechnet */
+/* Responsive Anpassungen für verschiedene Bildschirmgrößen */
 @media (max-width: 768px) {
-    .cell {
-        width: 50px;
-        height: 50px;
-        margin: 5px;
-    }
-    
-    .hover-piece {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .hover-row {
-        height: 50px;
-        margin-bottom: 5px;
-    }
-    
-    .animation-placeholder {
-        width: 50px;
-        height: 50px;
+    :root {
+        --cell-size: 50px;
+        --cell-margin: 5px;
     }
 }
 
 @media (max-width: 480px) {
-    .cell {
-        width: 40px;
-        height: 40px;
-        margin: 4px;
-    }
-    
-    .hover-piece {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .hover-row {
-        height: 40px;
-        margin-bottom: 4px;
-    }
-    
-    .animation-placeholder {
-        width: 40px;
-        height: 40px;
+    :root {
+        --cell-size: 40px;
+        --cell-margin: 4px;
     }
 }
