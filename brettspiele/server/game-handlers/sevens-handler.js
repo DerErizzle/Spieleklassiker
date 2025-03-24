@@ -462,29 +462,45 @@ const SevensHandler = {
         });
         
         // Alle spielbaren Karten auf das Brett legen und die restlichen behalten
+        // WICHTIG: Wir platzieren hier restlichen Karten, die man spielen könnte
         const { playableCount, placedCards, remainingCards } = this.placePlayableCards(
             room.gameState.board, hand, room.gameState.finishedOrder
         );
         
-        // Nicht mehr alle Karten entfernen - nur die spielbaren
+        // Die Karten des Spielers aktualisieren - hier behalten wir die nicht spielbaren Karten
         room.gameState.playerHands[playerIndex] = remainingCards;
         
-        // Spieler zur Liste der fertig gewordenen Spieler hinzufügen (wenn nicht bereits vorhanden)
-        // aber gib ihm den korrekten Rang basierend auf der aktuellen Anzahl der fertigen Spieler
-        const playerRank = room.gameState.finishedOrder.length;
+        // Den Spieler zur Rangliste hinzufügen, aber mit dem niedrigsten Rang
+        // Der wichtigste Teil: Wir stellen sicher, dass aufgebende Spieler den niedrigsten Rang bekommen
+        // Bestimme den Rang basierend auf der aktuellen finishedOrder
+        const playerUsername = room.players[playerIndex].username;
         
-        if (!room.gameState.finishedOrder.includes(room.players[playerIndex].username)) {
-            room.gameState.finishedOrder.push(room.players[playerIndex].username);
+        // Spieler an das Ende der finishedOrder setzen (wichtig: diese Liste wird in umgekehrter Reihenfolge
+        // für die Platzierung verwendet - letzter Platz = letzter in der Liste)
+        if (!room.gameState.finishedOrder.includes(playerUsername)) {
+            // Wir fügen den Spieler am Ende hinzu (niedrigster Rang)
+            room.gameState.finishedOrder.push(playerUsername);
         }
+        
+        // Dieser Rang muss der letzte sein (wichtig für die Anzeige im Client)
+        const rank = room.gameState.finishedOrder.length - 1;
+        
+        debug.log('Spieler aufgegeben, Rangzuweisung:', {
+            username: playerUsername,
+            rank: rank,
+            finishedOrder: room.gameState.finishedOrder,
+            remainingCardsCount: remainingCards.length,
+            placedCardsCount: placedCards.length
+        });
         
         // Nächster Spieler ist dran
         this.moveToNextPlayer(io, roomCode, room, {
             type: 'surrender',
-            player: room.players[playerIndex].username,
+            player: playerUsername,
             remainingCards: remainingCards.length,
             playableCardsPlaced: playableCount,
             placedCards: placedCards,
-            rank: playerRank, // Korrekter Rang basierend auf aktueller Position
+            rank: rank,
             finishedOrder: room.gameState.finishedOrder
         });
         
@@ -585,16 +601,25 @@ const SevensHandler = {
             const lastPlayerIndex = room.players.findIndex(p => p.username === lastPlayer.username);
             
             // Dem letzten Spieler die letzte Platzierung zuweisen
+            // Wichtig: Der letzte Spieler kommt an die letzte Position der finishedOrder
             room.gameState.finishedOrder.push(lastPlayer.username);
             
             // Eventuell noch spielbare Karten ablegen
             const { playableCount, placedCards, remainingCards } = this.placePlayableCards(
                 room.gameState.board, 
-                room.gameState.playerHands[lastPlayerIndex]
+                room.gameState.playerHands[lastPlayerIndex],
+                room.gameState.finishedOrder
             );
             
-            // Hand leeren
-            room.gameState.playerHands[lastPlayerIndex] = [];
+            // Hand auf die restlichen Karten setzen
+            room.gameState.playerHands[lastPlayerIndex] = remainingCards;
+            
+            debug.log('Letzter Spieler zugewiesen:', {
+                username: lastPlayer.username,
+                rank: room.gameState.finishedOrder.length - 1,
+                remainingCards: remainingCards.length,
+                placedCards: placedCards.length
+            });
             
             // Beende das Spiel mit vollständigem Ranking
             this.endGame(io, roomCode, room);

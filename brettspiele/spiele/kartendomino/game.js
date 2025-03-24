@@ -717,10 +717,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Hier nichts tun, der Server wird die finishedOrder aktualisieren
             }
         } else if (data.type === 'surrender') {
-            // Wenn wir der aufgebende Spieler sind, leere die Hand
+            // Wenn wir der aufgebende Spieler sind
             if (data.player === username) {
-                hand = [];
-                surrendered = true;
+                // Bei Aufgabe: NICHT die Hand leeren, sondern nur die gespielten Karten entfernen
+                if (data.placedCards && data.placedCards.length > 0) {
+                    // Entferne nur die Karten, die platziert wurden
+                    for (const placedCard of data.placedCards) {
+                        hand = hand.filter(card => 
+                            !(card.suit === placedCard.suit && card.value === placedCard.value)
+                        );
+                    }
+                    surrendered = true;
+                }
             }
             
             // Wenn Karten platziert wurden, aktualisiere das Brett
@@ -752,9 +760,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 playerObj.passCount = data.passCount;
             }
         } else if (data.type === 'surrender') {
-            if (data.rank !== undefined) {
-                // Stelle sicher, dass die Rangliste aktualisiert wird
-                updateFinishedPlayerInfo(data.player, data.rank);
+            const playerObj = players.find(p => p.username === data.player);
+            if (playerObj) {
+                // Bei Aufgabe: Aktualisiere die verbleibenden Karten
+                playerObj.cardsLeft = data.remainingCards;
+                
+                if (data.rank !== undefined) {
+                    // Wichtig: Hier wird der Rang korrekt zugewiesen
+                    // Der aufgebende Spieler bekommt den schlechtesten Rang
+                    updateFinishedPlayerInfo(data.player, data.rank);
+                }
             }
         }
         
@@ -771,6 +786,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (data.type === 'pass') {
             // Pass-Geräusch
             const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/pass.mp3'));
+            audio.volume = 0.3;
+            audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
+        } else if (data.type === 'surrender') {
+            // Surrender-Geräusch
+            const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/card-play.mp3'));
             audio.volume = 0.3;
             audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
         }
@@ -797,6 +817,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (playerObj) {
             playerObj.finished = true;
             playerObj.rank = rank;
+            
+            console.log(`Spieler ${playerUsername} fertig mit Rang ${rank}`, {
+                finishedOrder,
+                players
+            });
         }
     }
     
