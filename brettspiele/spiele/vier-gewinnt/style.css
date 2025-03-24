@@ -1,18 +1,20 @@
-/* Realistische Styles für Vier Gewinnt mit echten Löchern im Brett */
+/* Optimierte Styles für Vier Gewinnt */
 
+/* Grundlegende Variablen für gemeinsame Werte */
 :root {
     --cell-size: 70px;
     --cell-margin: 7px;
     --board-color: #1a4d7c;
     --active-turn-color: #27ae60;
     --inactive-turn-color: #7f8c8d;
+    --cell-color: white;
     --warning-color: #f39c12;
 }
 
 /* Spielbrett-Container */
 .game-board {
     display: inline-block;
-    background-color: transparent; /* Transparent damit die Chips von hinten sichtbar sind */
+    background-color: var(--board-color);
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -20,26 +22,15 @@
     position: relative;
 }
 
-/* Korrekte Z-Index-Hierarchie für realistischen Effekt */
-.game-board .hover-row { z-index: 30; } /* Hover-Stücke ganz oben */
-.game-board .column-hitbox { z-index: 30; } /* Hitboxes auf gleicher Ebene wie Hover */
-.game-board .board-rows { z-index: 20; } /* Brett mit Löchern in der Mitte */
-.game-board .animation-layer { z-index: 10; } /* Fallende Chips ganz hinten */
+/* Z-Index-Hierarchie für korrekte Überlagerung */
+.game-board { z-index: 5; position: relative; } /* Brett-Hintergrund (blau) */
+.game-board .column-hitbox { z-index: 50; } /* Oberste Ebene für Klicks */
+.game-board .hover-row { z-index: 40; } /* Für Hover-Stücke */
+.game-board .cell { z-index: 30; } /* Weiße Löcher */
+.game-board .animation-layer { z-index: 20; } /* Für Animationen (hinter dem Brett, vor den Löchern) */
+.game-board .board-rows { z-index: 10; } /* Grundebene des Bretts */
 
-/* Brett-Hintergrund als separate Ebene */
-.game-board::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--board-color);
-    border-radius: 10px;
-    z-index: 15; /* Zwischen dem Brett und den Chips */
-}
-
-/* Animations-Schicht für fallende Steine (hinter dem Brett) */
+/* Animations-Schicht für fallende Steine */
 .animation-layer {
     position: absolute;
     top: 0;
@@ -59,21 +50,22 @@
 .board-row {
     display: flex;
     flex-direction: row;
-    position: relative;
-    z-index: 20; /* Wichtig: über dem Brett-Hintergrund */
 }
 
-/* Zellen als "Löcher" im Brett */
-.cell {
+/* Allgemeine Styles für alle runden Elemente (Chips) */
+.cell, .hover-piece, .animation-placeholder {
     width: var(--cell-size);
     height: var(--cell-size);
-    margin: var(--cell-margin);
-    position: relative;
     border-radius: 50%;
-    background-color: white; /* Weiße Fläche, die das Brett "durchlöchert" */
+    position: relative;
+}
+
+/* Zellen im Brett */
+.cell {
+    background-color: var(--cell-color);
+    margin: var(--cell-margin);
     transition: background-color 0.1s;
     cursor: pointer;
-    z-index: 20; /* Über dem Brett-Hintergrund */
 }
 
 /* Unsichtbare Hitbox für die ganze Spalte */
@@ -82,6 +74,7 @@
     top: 0;
     bottom: 0;
     cursor: pointer;
+    /* Breite und Position werden in JavaScript dynamisch berechnet */
 }
 
 /* Hover-Reihe über dem Spielbrett */
@@ -96,27 +89,21 @@
 
 /* Hover-Stücke */
 .hover-piece {
-    width: var(--cell-size);
-    height: var(--cell-size);
-    border-radius: 50%;
     position: absolute;
-    opacity: 0.7;
+    opacity: 0.5;
     transition: left 0.2s ease;
 }
 
 /* Gegnerischer Hover-Effekt */
 .opponent-hover {
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
-/* Platzhalter für die Animation - liegt hinter dem Brett */
+/* Platzhalter für die Animation - Muss undurchsichtig sein */
 .animation-placeholder {
     position: absolute;
-    width: var(--cell-size);
-    height: var(--cell-size);
-    border-radius: 50%;
     transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-    opacity: 1 !important;
+    opacity: 1 !important; /* Vollständig undurchsichtig */
     border: none;
     box-shadow: none;
 }
@@ -124,6 +111,7 @@
 /* Gewinnzellen hervorheben */
 .winning-cell {
     animation: pulse 0.8s infinite alternate;
+    box-shadow: 0 0 10px white, 0 0 15px white;
 }
 
 /* Spielzustand-Styles */
@@ -153,6 +141,12 @@
     margin: 15px 0;
     font-weight: bold;
     display: none;
+}
+
+/* Spezifische Animation-Positionierung für den "hinter dem Brett" Effekt */
+.animation-placeholder {
+    position: relative;
+    z-index: 20; /* Muss mit dem animation-layer übereinstimmen */
 }
 
 /* Animationen */
