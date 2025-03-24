@@ -23,12 +23,13 @@
     },
     "login": {
       "welcome": "Welcome to Awesome Games",
-      "username": "Your player name",
+      "username": "Your player name:",
       "minLength": "At least 3 characters",
       "maxLength": "Maximum 15 characters",
-      "chooseColor": "Choose a player color",
+      "chooseColor": "Choose a player color:",
       "startButton": "Play!",
-      "usernamePlaceholder": "Enter name..."
+      "usernamePlaceholder": "Enter name...",
+      "language": "Language:"
     },
     "gameList": {
       "title": "Choose a Game",

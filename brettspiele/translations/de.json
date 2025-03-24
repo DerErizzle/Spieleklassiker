@@ -23,12 +23,13 @@
     },
     "login": {
       "welcome": "Willkommen bei Geile Games",
-      "username": "Dein Spielername",
+      "username": "Dein Spielername:",
       "minLength": "Mindestens 3 Zeichen",
       "maxLength": "Maximal 15 Zeichen",
-      "chooseColor": "Wähle eine Spielerfarbe",
+      "chooseColor": "Wähle eine Spielerfarbe:",
       "startButton": "Spielen!",
-      "usernamePlaceholder": "Name eingeben..."
+      "usernamePlaceholder": "Name eingeben...",
+      "language": "Sprache:"
     },
     "gameList": {
       "title": "Wähle ein Spiel",
