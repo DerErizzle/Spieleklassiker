@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function placeMultipleCards(placedCards) {
         if (!placedCards || !placedCards.length) return;
         
-        // Karten zum Brett hinzufügen und Brett neu rendern
+        // Karten zum Brett hinzufügen
         placedCards.forEach(card => {
             if (!board[card.suit].includes(card.value)) {
                 board[card.suit].push(card.value);
@@ -542,6 +542,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Brett neu rendern
         renderBoard();
+        
+        // Audio-Feedback für Kartenbewegung
+        const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/card-play.mp3'));
+        audio.volume = 0.3;
+        audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
     }
     
     /**
@@ -717,30 +722,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Hier nichts tun, der Server wird die finishedOrder aktualisieren
             }
         } else if (data.type === 'surrender') {
-            // Für den aufgebenden Spieler: Platziere ALLE Karten aus der Hand auf dem Board.
+            // Für den aufgebenden Spieler: Leere die Hand
             if (data.player === username) {
-                // Übergib alle Karten in der Hand an das Board
-                placeMultipleCards(hand);
-                // Setze das surrender-Flag, damit andere Logik weiß, dass dieser Spieler aufgegeben hat.
+                // Setze das surrender-Flag
                 surrendered = true;
-                // Optional: Leere die Hand (sofern du nicht mehr willst, dass die Karten als Handkarten erscheinen)
+                // Wichtig: Leere die Hand erst nachdem placeMultipleCards ausgeführt wurde
                 hand = [];
             }
             
-            // Falls der Server weitere (geplante) Kartenpositionen mitliefert, diese ebenfalls auf dem Board platzieren.
+            // Platziere die vom Server gesendeten Karten auf dem Brett
             if (data.placedCards && data.placedCards.length > 0) {
                 placeMultipleCards(data.placedCards);
             }
             
-            // Falls der Server die Anzahl verbleibender Karten sendet, diese im Spielerobjekt aktualisieren
+            // Aktualisiere die Spielerinformationen
             const playerObj = players.find(p => p.username === data.player);
-            if (playerObj && data.remainingCards !== undefined) {
-                 playerObj.cardsLeft = data.remainingCards;
-            }
-            
-            // Wenn der Server den Rang für den Surrender-Fall liefert, diesen übernehmen.
-            if (data.rank !== undefined) {
-                 updateFinishedPlayerInfo(data.player, data.rank);
+            if (playerObj) {
+                // Aktualisiere die verbleibenden Karten
+                playerObj.cardsLeft = data.remainingCards || 0;
+                
+                // Aktualisiere den Rang in der finishedOrder
+                if (data.rank !== undefined) {
+                    updateFinishedPlayerInfo(data.player, data.rank);
+                }
             }
         }
         
@@ -807,17 +811,19 @@ document.addEventListener('DOMContentLoaded', function() {
      * Aktualisiert die Informationen über einen Spieler, der fertig ist
      */
     function updateFinishedPlayerInfo(playerUsername, rank) {
-        // Aktualisiere den finishedOrder-Array wenn nicht bereits vorhanden
-        if (!finishedOrder.includes(playerUsername)) {
-            // Stelle sicher, dass der Array groß genug ist
-            while (finishedOrder.length <= rank) {
-                finishedOrder.push(null);
-            }
-            finishedOrder[rank] = playerUsername;
-            
-            // Entferne leere Einträge
-            finishedOrder = finishedOrder.filter(p => p !== null);
+        // Entferne den Spieler zuerst aus der Liste, falls er bereits vorhanden ist
+        finishedOrder = finishedOrder.filter(p => p !== playerUsername);
+        
+        // Stelle sicher, dass der Array groß genug ist
+        while (finishedOrder.length <= rank) {
+            finishedOrder.push(null);
         }
+        
+        // Setze den Spieler an die korrekte Position
+        finishedOrder[rank] = playerUsername;
+        
+        // Entferne leere Einträge
+        finishedOrder = finishedOrder.filter(p => p !== null);
         
         // Aktualisiere den Player-Status in der Spielerliste
         const playerObj = players.find(p => p.username === playerUsername);
@@ -825,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
             playerObj.finished = true;
             playerObj.rank = rank;
             
-            console.log(`Spieler ${playerUsername} fertig mit Rang ${rank}`, {
+            console.log(`Spieler ${playerUsername} hat Rang ${rank} erhalten`, {
                 finishedOrder,
                 players
             });
