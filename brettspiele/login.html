@@ -9,12 +9,6 @@
 <body class="login-page">
     <div class="container">
         <div class="login-box">
-            <div class="language-selector login-language-selector">
-                <select id="language-switcher">
-                    <option value="de">Deutsch</option>
-                    <option value="en">English</option>
-                </select>
-            </div>
             <h1 data-i18n="login.welcome">Willkommen bei Geile Games</h1>
             <form id="login-form">
                 <div class="form-group">
@@ -38,6 +32,14 @@
                 </div>
                 
                 <button type="submit" id="start-button" disabled data-i18n="login.startButton">Spielen!</button>
+                
+                <div class="language-selector login-language-selector">
+                    <label for="language-switcher" data-i18n="login.language">Sprache:</label>
+                    <select id="language-switcher">
+                        <option value="de">Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
             </form>
         </div>
     </div>

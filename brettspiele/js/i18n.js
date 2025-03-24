@@ -17,8 +17,8 @@ class I18nService {
      * Initialisiert den Internationalisierungs-Service
      */
     async init() {
-        // Gespeicherte Sprache aus dem localStorage laden
-        const savedLang = localStorage.getItem('language');
+        // Gespeicherte Sprache aus dem Cookie laden
+        const savedLang = getCookie('language');
         if (savedLang && ['de', 'en'].includes(savedLang)) {
             this.currentLanguage = savedLang;
         }
@@ -29,7 +29,7 @@ class I18nService {
         // Übersetzungen laden
         await this.loadTranslations();
         
-        // Event-Listener für Sprachänderungen einrichten
+        // Event-Listener für Sprachänderungen einrichten (nur auf Login-Seite)
         document.addEventListener('DOMContentLoaded', () => {
             const langSwitcher = document.getElementById('language-switcher');
             if (langSwitcher) {
@@ -82,7 +82,10 @@ class I18nService {
         }
         
         this.currentLanguage = lang;
-        localStorage.setItem('language', lang);
+        
+        // Sprache in Cookie speichern
+        setCookie('language', lang, 30);
+        
         document.documentElement.lang = lang;
         
         // Übersetzungen neu laden

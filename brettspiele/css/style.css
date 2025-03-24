@@ -38,10 +38,10 @@ body {
     position: relative;
 }
 
-.login-language-selector {
-    position: absolute;
-    top: 15px;
-    right: 15px;
+.login-language-selector label {
+    margin-right: 10px;
+    font-weight: 600;
+    color: #555;
 }
 
 .login-box h1 {

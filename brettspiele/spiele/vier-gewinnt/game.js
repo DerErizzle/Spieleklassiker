@@ -361,7 +361,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             const currentPlayer = players.find(p => p.username === currentPlayerUsername);
             if (currentPlayer) {
-                gameStatusEl.textContent = i18n.t('connectFour.otherTurn', { player: currentPlayerUsername });
+                gameStatusEl.setAttribute('data-i18n', 'connectFour.otherTurn');
+                gameStatusEl.setAttribute('data-i18n-params', JSON.stringify({ player: currentPlayerUsername }));
+                gameStatusEl.textContent = i18n.replaceParams(i18n.t('connectFour.otherTurn'), { player: currentPlayerUsername });
                 gameStatusEl.className = 'game-status not-your-turn';
             }
         }
@@ -476,11 +478,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.winner) {
             if (data.winner === username) {
                 gameStatusEl.textContent = i18n.t('connectFour.youWon');
+                gameStatusEl.setAttribute('data-i18n', 'connectFour.youWon');
+                gameStatusEl.removeAttribute('data-i18n-params');
             } else {
-                gameStatusEl.textContent = i18n.t('connectFour.otherWon', { player: data.winner });
+                gameStatusEl.setAttribute('data-i18n', 'connectFour.otherWon');
+                gameStatusEl.setAttribute('data-i18n-params', JSON.stringify({ player: data.winner }));
+                gameStatusEl.textContent = i18n.replaceParams(i18n.t('connectFour.otherWon'), { player: data.winner });
             }
         } else {
             gameStatusEl.textContent = i18n.t('connectFour.draw');
+            gameStatusEl.setAttribute('data-i18n', 'connectFour.draw');
+            gameStatusEl.removeAttribute('data-i18n-params');
         }
         
         gameStatusEl.className = 'game-status winner-message';
