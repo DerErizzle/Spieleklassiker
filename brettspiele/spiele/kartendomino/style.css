@@ -11,6 +11,7 @@
     --active-turn-color: #27ae60;
     --inactive-turn-color: #7f8c8d;
     --warning-color: #f39c12;
+    --finished-color: #3498db;
     --card-width: 80px;
     --card-height: 120px;
     --card-border-radius: 8px;
@@ -245,6 +246,10 @@
     color: var(--inactive-turn-color);
 }
 
+.finished-status {
+    color: var(--finished-color);
+}
+
 .connection-status {
     background-color: var(--warning-color);
     color: white;
@@ -254,6 +259,17 @@
     margin: 15px 0;
     font-weight: bold;
     display: none;
+}
+
+/* Spieler-Styling */
+.player.finished-player {
+    opacity: 0.8;
+    background-color: rgba(52, 152, 219, 0.1);
+    border-radius: 30px;
+}
+
+.player.active-player.finished-player {
+    background-color: rgba(46, 204, 113, 0.1);
 }
 
 /* Modal */
@@ -296,6 +312,25 @@
 .ranking-item.winner {
     background-color: #f1c40f;
     font-weight: bold;
+}
+
+.ranking-item:nth-child(1) {
+    background-color: gold;
+    font-weight: bold;
+}
+
+.ranking-item:nth-child(2) {
+    background-color: silver;
+    font-weight: bold;
+}
+
+.ranking-item:nth-child(3) {
+    background-color: #cd7f32; /* Bronze */
+    font-weight: bold;
+}
+
+.ranking-item:nth-child(4) {
+    background-color: #f8f9fa;
 }
 
 #close-modal-button {

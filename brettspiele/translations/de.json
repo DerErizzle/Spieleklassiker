@@ -74,7 +74,8 @@
         "surrender": "Aufgeben",
         "cardsLeft": "Karten übrig",
         "host": "Host",
-        "bot": "Bot"
+        "bot": "Bot",
+        "finishedWatching": "Du bist auf Platz {rank} und beobachtest das Spiel"
     },
     "errors": {
         "roomNotFound": "Der Raum existiert nicht.",

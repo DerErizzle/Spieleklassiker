@@ -74,7 +74,8 @@
         "surrender": "Surrender",
         "cardsLeft": "cards left",
         "host": "Host",
-        "bot": "Bot"
+        "bot": "Bot",
+        "finishedWatching": "You are #{rank} and watching the game"
     },
     "errors": {
         "roomNotFound": "The room does not exist.",
