@@ -164,7 +164,7 @@ const SevensHandler = {
      * @param {Array} cards - Karten des Spielers
      * @returns {Object} - Informationen über die abgelegten Karten
      */
-    placePlayableCards(board, cards, finishedOrder = []) {
+    placePlayableCards(board, cards, finishedOrder = [], isSurrender = false) {
         let playableCount = 0;
         let remainingCards = [...cards];
         let placedCards = [];
@@ -176,7 +176,9 @@ const SevensHandler = {
             
             for (let i = remainingCards.length - 1; i >= 0; i--) {
                 const card = remainingCards[i];
-                if (this.isCardPlayable(board, card, finishedOrder)) {
+                // Bei Aufgabe verwenden wir eine einfachere Regel: Karte muss nur an eine
+                // bestehende Karte angrenzen, ohne Lücken zu prüfen
+                if (isSurrender ? this.isCardPlayableForSurrender(board, card) : this.isCardPlayable(board, card, finishedOrder)) {
                     // Karte auf das Brett legen
                     board[card.suit].push(card.value);
                     // Karte aus der Hand entfernen
@@ -196,7 +198,8 @@ const SevensHandler = {
         debug.log('Platzierte Karten bei Aufgabe:', {
             playableCount, 
             placedCards, 
-            remainingCards
+            remainingCards,
+            isSurrender
         });
         
         return {
@@ -462,9 +465,12 @@ const SevensHandler = {
         });
         
         // Alle spielbaren Karten auf das Brett legen und die restlichen behalten
-        // WICHTIG: Wir platzieren hier restlichen Karten, die man spielen könnte
+        // WICHTIG: Verwende isSurrender=true, damit unsere spezielle Aufgabe-Regel greift
         const { playableCount, placedCards, remainingCards } = this.placePlayableCards(
-            room.gameState.board, hand, room.gameState.finishedOrder
+            room.gameState.board, 
+            hand, 
+            room.gameState.finishedOrder, 
+            true // Flag für Aufgabe-Regel
         );
         
         // Die Karten des Spielers aktualisieren - hier behalten wir die nicht spielbaren Karten
@@ -475,8 +481,7 @@ const SevensHandler = {
         // Bestimme den Rang basierend auf der aktuellen finishedOrder
         const playerUsername = room.players[playerIndex].username;
         
-        // Spieler an das Ende der finishedOrder setzen (wichtig: diese Liste wird in umgekehrter Reihenfolge
-        // für die Platzierung verwendet - letzter Platz = letzter in der Liste)
+        // Spieler an das Ende der finishedOrder setzen
         if (!room.gameState.finishedOrder.includes(playerUsername)) {
             // Wir fügen den Spieler am Ende hinzu (niedrigster Rang)
             room.gameState.finishedOrder.push(playerUsername);
@@ -628,6 +633,15 @@ const SevensHandler = {
             // beende das Spiel trotzdem
             this.endGame(io, roomCode, room);
         }
+    },
+
+    isCardPlayableForSurrender(board, card) {
+        const { suit, value } = card;
+        const suitValues = board[suit];
+        
+        // Bei Aufgabe ist eine Karte spielbar, wenn sie direkt an eine andere Karte angrenzt
+        // Wir prüfen nicht auf Lücken, sondern nur auf direkte Nachbarn
+        return suitValues.includes(value - 1) || suitValues.includes(value + 1);
     },
     
     /**
