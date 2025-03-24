@@ -239,18 +239,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     opponent.nameEl.textContent = player.username;
                     
                     // Karten rendern (nur Rückseiten)
-                    renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
+                    if (player.finished) {
+                        // Keine Karten anzeigen, wenn der Spieler fertig ist
+                        opponent.cardsEl.innerHTML = '';
+                        
+                        // Platzierung anzeigen
+                        const rank = finishedOrder.indexOf(player.username);
+                        if (rank !== -1) {
+                            opponent.nameEl.textContent = `${player.username} (#${rank + 1})`;
+                        }
+                    } else {
+                        renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
+                    }
                     
                     // Pass-Zähler (falls bekannt)
                     if (player.passCount !== undefined) {
                         opponent.passCountEl.textContent = i18n.t('sevens.passCountShort') + ': ' + player.passCount + '/3';
                     } else {
                         opponent.passCountEl.textContent = '';
-                    }
-                    
-                    // Platzierung anzeigen, wenn der Spieler aufgegeben hat oder fertig ist
-                    if (player.finished && player.rank !== undefined) {
-                        opponent.nameEl.textContent = `${player.username} (#${player.rank + 1})`;
                     }
                     
                     // Markieren, wenn dieser Spieler dran ist
@@ -272,18 +278,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     opponent.nameEl.textContent = player.username;
                     
                     // Karten rendern (nur Rückseiten)
-                    renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
+                    if (player.finished) {
+                        // Keine Karten anzeigen, wenn der Spieler fertig ist
+                        opponent.cardsEl.innerHTML = '';
+                        
+                        // Platzierung anzeigen
+                        const rank = finishedOrder.indexOf(player.username);
+                        if (rank !== -1) {
+                            opponent.nameEl.textContent = `${player.username} (#${rank + 1})`;
+                        }
+                    } else {
+                        renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
+                    }
                     
                     // Pass-Zähler (falls bekannt)
                     if (player.passCount !== undefined) {
                         opponent.passCountEl.textContent = i18n.t('sevens.passCountShort') + ': ' + player.passCount + '/3';
                     } else {
                         opponent.passCountEl.textContent = '';
-                    }
-                    
-                    // Platzierung anzeigen, wenn der Spieler aufgegeben hat oder fertig ist
-                    if (player.finished && player.rank !== undefined) {
-                        opponent.nameEl.textContent = `${player.username} (#${player.rank + 1})`;
                     }
                     
                     // Markieren, wenn dieser Spieler dran ist
@@ -325,6 +337,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 playerDiv.classList.add('active-player');
             }
             
+            // Wenn der Spieler fertig ist, auch als inaktiv markieren
+            if (finishedOrder.includes(player.username)) {
+                playerDiv.classList.add('finished-player');
+            }
+            
             const playerColorDiv = document.createElement('div');
             playerColorDiv.className = 'player-color';
             playerColorDiv.style.backgroundColor = player.color;
@@ -342,9 +359,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 playerNameText += ` (${i18n.t('sevens.bot')})`;
             }
             
-            // Platzierung anzeigen, wenn der Spieler aufgegeben hat oder fertig ist
-            if (player.finished && player.rank !== undefined) {
-                playerNameText += ` (#${player.rank + 1})`;
+            // Platzierung anzeigen, wenn der Spieler fertig ist
+            if (finishedOrder.includes(player.username)) {
+                const rank = finishedOrder.indexOf(player.username);
+                playerNameText += ` (#${rank + 1})`;
             }
             
             playerName.textContent = playerNameText;
@@ -415,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /**
      * Prüft, ob eine Karte spielbar ist
-     * Implementiert die neue Regel: Nach Aufgabe eines Spielers müssen alle Karten zwischen 7 und
+     * Implementiert die Regel: Nach Aufgabe eines Spielers müssen alle Karten zwischen 7 und
      * der neuen Karte bereits auf dem Tisch liegen
      */
     function isCardPlayable(board, card) {
@@ -504,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Zeigt das Spielende-Modal an
      */
     function showGameOverModal(data) {
-        const { winner, ranking } = data;
+        const { winner, ranking, finishedOrder } = data;
         
         // Gewinner-Nachricht
         if (winner === username) {
@@ -516,31 +534,69 @@ document.addEventListener('DOMContentLoaded', function() {
         // Rangliste
         rankingListEl.innerHTML = '';
         
-        // Sortiere die Rangliste nach der Rang-Position (die vom Server bestimmt wurde)
-        const sortedRanking = [...ranking].sort((a, b) => a.rank - b.rank);
-        
-        sortedRanking.forEach((player) => {
-            const rankingItem = document.createElement('div');
-            rankingItem.className = 'ranking-item';
-            if (player.username === winner) {
-                rankingItem.classList.add('winner');
-            }
+        // Die Rangliste basiert auf der finishedOrder vom Server
+        if (finishedOrder && finishedOrder.length > 0) {
+            finishedOrder.forEach((playerName, index) => {
+                const rankingItem = document.createElement('div');
+                rankingItem.className = 'ranking-item';
+                if (playerName === winner) {
+                    rankingItem.classList.add('winner');
+                }
+                
+                const playerInfo = ranking.find(p => p.username === playerName);
+                
+                const playerRank = document.createElement('span');
+                playerRank.className = 'player-rank';
+                playerRank.textContent = `${index + 1}.`;
+                
+                const playerName = document.createElement('span');
+                let playerNameText = playerInfo ? playerInfo.username : playerName;
+                
+                if (playerNameText === username) {
+                    playerNameText += ' (Du)';
+                }
+                if (playerInfo && playerInfo.isBot) {
+                    playerNameText += ` (${i18n.t('sevens.bot')})`;
+                }
+                
+                playerName.textContent = playerNameText;
+                
+                rankingItem.appendChild(playerRank);
+                rankingItem.appendChild(playerName);
+                rankingListEl.appendChild(rankingItem);
+            });
+        } else {
+            // Fallback: Sortiere die Rangliste nach dem Rang
+            const sortedRanking = [...ranking].sort((a, b) => a.rank - b.rank);
             
-            const playerName = document.createElement('span');
-            let playerNameText = `${player.rank + 1}. ${player.username}`;
-            
-            if (player.username === username) {
-                playerNameText += ' (Du)';
-            }
-            if (player.isBot) {
-                playerNameText += ` (${i18n.t('sevens.bot')})`;
-            }
-            
-            playerName.textContent = playerNameText;
-            
-            rankingItem.appendChild(playerName);
-            rankingListEl.appendChild(rankingItem);
-        });
+            sortedRanking.forEach((player, index) => {
+                const rankingItem = document.createElement('div');
+                rankingItem.className = 'ranking-item';
+                if (player.username === winner) {
+                    rankingItem.classList.add('winner');
+                }
+                
+                const playerRank = document.createElement('span');
+                playerRank.className = 'player-rank';
+                playerRank.textContent = `${index + 1}.`;
+                
+                const playerName = document.createElement('span');
+                let playerNameText = player.username;
+                
+                if (player.username === username) {
+                    playerNameText += ' (Du)';
+                }
+                if (player.isBot) {
+                    playerNameText += ` (${i18n.t('sevens.bot')})`;
+                }
+                
+                playerName.textContent = playerNameText;
+                
+                rankingItem.appendChild(playerRank);
+                rankingItem.appendChild(playerName);
+                rankingListEl.appendChild(rankingItem);
+            });
+        }
         
         // Modal anzeigen
         gameOverModal.style.display = 'block';
@@ -656,6 +712,11 @@ document.addEventListener('DOMContentLoaded', function() {
             hand = hand.filter(card => 
                 !(card.suit === playedCard.suit && card.value === playedCard.value)
             );
+            
+            // Wenn wir alle Karten abgelegt haben, markieren uns als fertig
+            if (hand.length === 0) {
+                surrendered = true;
+            }
         } else if (data.type === 'surrender') {
             // Ein Spieler hat aufgegeben, füge ihn zur Liste der aufgegebenen Spieler hinzu
             if (!surrenderedPlayers.includes(data.player)) {
@@ -667,44 +728,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 hand = [];
                 surrendered = true;
             }
-            
-            // Platzierung des aufgebenden Spielers aktualisieren
-            const playerIndex = finishedOrder.length;
-            finishedOrder.push(data.player);
-            
-            // Platzierung für den aufgebenden Spieler setzen
-            const playerToUpdate = players.find(p => p.username === data.player);
-            if (playerToUpdate) {
-                playerToUpdate.finished = true;
-                playerToUpdate.rank = playerIndex;
-            }
+        }
+        
+        // Aktualisiere die finishedOrder, wenn vom Server empfangen
+        if (data.finishedOrder) {
+            finishedOrder = data.finishedOrder;
+        }
+        
+        // Aktualisiere die Spielerliste, wenn vom Server empfangen
+        if (data.players) {
+            players = data.players;
         }
         
         renderBoard();
         renderPlayerHand();
-        
-        // Aktualisiere die Karten-Anzahl und Pass-Zähler der Spieler
-        if (data.type === 'play') {
-            const playerObj = players.find(p => p.username === data.player);
-            if (playerObj) {
-                playerObj.cardsLeft = data.remainingCards;
-                
-                // Wenn der Spieler keine Karten mehr hat, hat er gewonnen
-                if (data.remainingCards === 0) {
-                    const playerIndex = finishedOrder.length;
-                    finishedOrder.push(data.player);
-                    
-                    playerObj.finished = true;
-                    playerObj.rank = playerIndex;
-                }
-            }
-        } else if (data.type === 'pass') {
-            const playerObj = players.find(p => p.username === data.player);
-            if (playerObj) {
-                playerObj.passCount = data.passCount;
-            }
-        }
-        
         renderOpponents();
         updatePlayerList(players);
         updateGameStatus();
@@ -720,6 +757,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/pass.mp3'));
             audio.volume = 0.3;
             audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
+        } else if (data.type === 'surrender') {
+            // Aufgabe-Geräusch
+            const audio = new Audio(getCdnUrl('/games/kartendomino/sounds/surrender.mp3'));
+            audio.volume = 0.3;
+            audio.play().catch(e => console.error('Audio konnte nicht abgespielt werden:', e));
         }
     });
     
@@ -728,8 +770,13 @@ document.addEventListener('DOMContentLoaded', function() {
         gameOver = true;
         
         board = data.board;
-        renderBoard();
         
+        // Speichere die finishedOrder wenn vom Server gesendet
+        if (data.finishedOrder) {
+            finishedOrder = data.finishedOrder;
+        }
+        
+        renderBoard();
         updateGameStatus();
         showGameOverModal(data);
     });
@@ -774,20 +821,17 @@ document.addEventListener('DOMContentLoaded', function() {
         surrendered = data.surrendered;
         playerIndex = data.playerIndex;
         
+        // Übernehme die finishedOrder vom Server, wenn vorhanden
+        if (data.finishedOrder) {
+            finishedOrder = data.finishedOrder;
+        }
+        
         // Rekonstruiere die Liste der aufgegebenen Spieler
         surrenderedPlayers = [];
         if (data.players) {
             data.players.forEach(player => {
-                if (player.surrendered) {
+                if (player.finished) {
                     surrenderedPlayers.push(player.username);
-                }
-                
-                // Spieler mit Platzierung
-                if (player.finished && player.rank !== undefined) {
-                    while (finishedOrder.length <= player.rank) {
-                        finishedOrder.push(null);
-                    }
-                    finishedOrder[player.rank] = player.username;
                 }
             });
         }

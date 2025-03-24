@@ -11,6 +11,7 @@
     --active-turn-color: #27ae60;
     --inactive-turn-color: #7f8c8d;
     --warning-color: #f39c12;
+    --finished-color: #3498db;
     --card-width: 80px;
     --card-height: 120px;
     --card-border-radius: 8px;
@@ -47,6 +48,11 @@
     flex-direction: column;
     align-items: center;
     margin: 0 10px;
+    transition: opacity 0.3s;
+}
+
+.opponent.finished-player {
+    opacity: 0.7;
 }
 
 .opponent-info {
@@ -60,6 +66,19 @@
 .opponent-name {
     font-weight: bold;
     margin-bottom: 5px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    transition: background-color 0.3s;
+}
+
+/* Styles für Gegner, die am Zug sind */
+.opponent.active-player .opponent-name {
+    background-color: rgba(39, 174, 96, 0.7);
+}
+
+/* Styles für Gegner, die fertig sind */
+.finished-player .opponent-name {
+    background-color: rgba(52, 152, 219, 0.5);
 }
 
 .opponent-pass-count {
@@ -256,6 +275,42 @@
     display: none;
 }
 
+/* Spielerlisten-Styling */
+.player-list {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    background-color: #f8f9fa;
+    border-radius: 30px;
+    transition: all 0.3s;
+}
+
+.player.active-player {
+    background-color: #e8f4fd;
+    box-shadow: 0 0 0 2px var(--active-turn-color);
+}
+
+.player.finished-player {
+    background-color: #e8f8fd;
+    opacity: 0.8;
+    box-shadow: 0 0 0 2px var(--finished-color);
+}
+
+.player-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
 /* Modal */
 .modal {
     display: none;
@@ -286,11 +341,19 @@
 
 .ranking-item {
     display: flex;
-    justify-content: space-between;
     padding: 10px;
     margin: 5px 0;
     background-color: #f8f9fa;
     border-radius: 5px;
+    align-items: center;
+    gap: 15px;
+}
+
+.ranking-item .player-rank {
+    font-weight: bold;
+    font-size: 1.2em;
+    min-width: 30px;
+    text-align: center;
 }
 
 .ranking-item.winner {
