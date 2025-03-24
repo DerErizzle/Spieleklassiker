@@ -377,10 +377,43 @@ const SevensHandler = {
             username: room.players[playerIndex].username
         });
         
+        // Alle Karten des Spielers auf das Brett legen
+        const cardsToPlace = [...hand];
+        room.gameState.playerHands[playerIndex] = []; // Hand leeren
+        
+        // Alle spielbaren Karten ablegen
+        const playableCards = cardsToPlace.filter(card => this.isCardPlayable(room.gameState.board, card));
+        playableCards.forEach(card => {
+            room.gameState.board[card.suit].push(card.value);
+            // Karte aus der ursprünglichen Liste entfernen
+            const index = cardsToPlace.findIndex(c => c.suit === card.suit && c.value === card.value);
+            if (index !== -1) {
+                cardsToPlace.splice(index, 1);
+            }
+        });
+        
+        // Sortieren der Karten auf dem Brett
+        for (const suit in room.gameState.board) {
+            room.gameState.board[suit].sort((a, b) => a - b);
+        }
+        
+        // Prüfen, ob 3 Spieler aufgegeben haben - dann ist das Spiel vorbei
+        const surrenderedCount = room.gameState.surrendered.filter(s => s).length;
+        if (surrenderedCount >= 3) {
+            // Spiel beenden - der nicht aufgegebene Spieler gewinnt
+            const winnerIndex = room.gameState.surrendered.findIndex(s => !s);
+            if (winnerIndex !== -1) {
+                this.endGame(io, roomCode, room, winnerIndex);
+                return true;
+            }
+        }
+        
         // Nächster Spieler ist dran
         this.moveToNextPlayer(io, roomCode, room, {
             type: 'surrender',
-            player: room.players[playerIndex].username
+            player: room.players[playerIndex].username,
+            remainingCards: cardsToPlace.length,
+            playableCardsPlaced: playableCards.length
         });
         
         return true;
@@ -452,8 +485,25 @@ const SevensHandler = {
      * Wechselt zum nächsten Spieler
      */
     moveToNextPlayer(io, roomCode, room, lastMove) {
+        // Nächsten aktiven Spieler finden (der nicht aufgegeben hat)
+        let nextPlayerIndex = (room.currentTurn + 1) % room.players.length;
+        let loopCount = 0;
+        
+        // Finde den nächsten nicht-aufgegebenen Spieler
+        while (room.gameState.surrendered[nextPlayerIndex] && loopCount < room.players.length) {
+            nextPlayerIndex = (nextPlayerIndex + 1) % room.players.length;
+            loopCount++;
+        }
+        
+        // Falls alle Spieler aufgegeben haben (sollte nicht passieren), beende das Spiel
+        if (loopCount >= room.players.length) {
+            debug.log('Alle Spieler haben aufgegeben, beende Spiel:', { roomCode });
+            this.endGame(io, roomCode, room, room.currentTurn);
+            return;
+        }
+        
         // Zum nächsten Spieler wechseln
-        room.currentTurn = (room.currentTurn + 1) % room.players.length;
+        room.currentTurn = nextPlayerIndex;
         
         // Alle Spieler über den Zug informieren
         io.to(roomCode).emit('moveUpdate', {

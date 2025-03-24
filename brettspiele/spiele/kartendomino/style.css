@@ -20,6 +20,10 @@
     flex-direction: column;
     min-height: 700px;
     position: relative;
+    width: 90%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Gegner-Bereich */
@@ -55,9 +59,10 @@
 
 .opponent-cards {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
-    gap: 5px;
+    gap: 0;
+    min-height: var(--opponent-card-height);
 }
 
 .opponent-card {
@@ -67,6 +72,11 @@
     background-size: cover;
     border-radius: var(--card-border-radius);
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    margin-left: -15px;
+}
+
+.opponent-card:first-child {
+    margin-left: 0;
 }
 
 /* Spielfeld */
@@ -100,11 +110,13 @@
 
 .cards-container {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 5px;
     min-height: 60px;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    padding: 0 10px;
 }
 
 /* Spielerkarten */
@@ -119,10 +131,28 @@
 
 .player-hand {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
-    gap: 10px;
+    gap: 0;
     margin-bottom: 20px;
+    position: relative;
+    height: var(--card-height);
+}
+
+.player-hand .card {
+    margin-left: -30px;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s, margin-top 0.2s;
+    position: relative;
+    z-index: 1;
+}
+
+.player-hand .card:first-child {
+    margin-left: 0;
+}
+
+.player-hand .card:hover {
+    z-index: 10;
+    margin-top: -10px;
 }
 
 .card {

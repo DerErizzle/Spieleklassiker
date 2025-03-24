@@ -207,37 +207,73 @@ document.addEventListener('DOMContentLoaded', function() {
             opponent.el.style.display = 'none';
         });
         
-        // Gegner-Information aktualisieren
-        let opponentIndex = 0;
-        
-        players.forEach((player, index) => {
-            if (index === playerIndex) return; // Eigener Spieler
+        // Gegner sortieren nach Spielreihenfolge (beginnend mit dem aktuellen Spieler)
+        const sortedPlayers = [...players];
+        if (playerIndex !== -1) {
+            // Rotiere die Spieler, sodass die Reihenfolge korrekt ist
+            const otherPlayers = sortedPlayers.slice(0, playerIndex).concat(sortedPlayers.slice(playerIndex + 1));
             
-            if (opponentIndex < opponents.length) {
-                const opponent = opponents[opponentIndex];
-                opponent.el.style.display = 'flex';
-                opponent.nameEl.textContent = player.username;
+            // Platziere die Gegner entsprechend (links, oben, rechts)
+            const positions = ['left', 'top', 'right'];
+            
+            for (let i = 0; i < otherPlayers.length && i < positions.length; i++) {
+                const position = positions[i];
+                const opponent = opponents.find(op => op.el.id === `opponent-${position}`);
+                const player = otherPlayers[i];
                 
-                // Karten rendern (nur Rückseiten)
-                renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
-                
-                // Pass-Zähler (falls bekannt)
-                if (player.passCount !== undefined) {
-                    opponent.passCountEl.textContent = i18n.t('sevens.passCountShort') + ': ' + player.passCount + '/3';
-                } else {
-                    opponent.passCountEl.textContent = '';
+                if (opponent && player) {
+                    opponent.el.style.display = 'flex';
+                    opponent.nameEl.textContent = player.username;
+                    
+                    // Karten rendern (nur Rückseiten)
+                    renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
+                    
+                    // Pass-Zähler (falls bekannt)
+                    if (player.passCount !== undefined) {
+                        opponent.passCountEl.textContent = i18n.t('sevens.passCountShort') + ': ' + player.passCount + '/3';
+                    } else {
+                        opponent.passCountEl.textContent = '';
+                    }
+                    
+                    // Markieren, wenn dieser Spieler dran ist
+                    if (player.username === currentPlayerUsername) {
+                        opponent.el.classList.add('active-player');
+                    } else {
+                        opponent.el.classList.remove('active-player');
+                    }
                 }
-                
-                // Markieren, wenn dieser Spieler dran ist
-                if (player.username === currentPlayerUsername) {
-                    opponent.el.classList.add('active-player');
-                } else {
-                    opponent.el.classList.remove('active-player');
-                }
-                
-                opponentIndex++;
             }
-        });
+        } else {
+            // Fallback, wenn playerIndex nicht bekannt ist
+            let opponentIndex = 0;
+            
+            players.forEach((player, index) => {
+                if (player.username !== username && opponentIndex < opponents.length) {
+                    const opponent = opponents[opponentIndex];
+                    opponent.el.style.display = 'flex';
+                    opponent.nameEl.textContent = player.username;
+                    
+                    // Karten rendern (nur Rückseiten)
+                    renderOpponentCards(opponent.cardsEl, player.cardsLeft || 12);
+                    
+                    // Pass-Zähler (falls bekannt)
+                    if (player.passCount !== undefined) {
+                        opponent.passCountEl.textContent = i18n.t('sevens.passCountShort') + ': ' + player.passCount + '/3';
+                    } else {
+                        opponent.passCountEl.textContent = '';
+                    }
+                    
+                    // Markieren, wenn dieser Spieler dran ist
+                    if (player.username === currentPlayerUsername) {
+                        opponent.el.classList.add('active-player');
+                    } else {
+                        opponent.el.classList.remove('active-player');
+                    }
+                    
+                    opponentIndex++;
+                }
+            });
+        }
     }
     
     /**
@@ -480,6 +516,10 @@ document.addEventListener('DOMContentLoaded', function() {
             gameSocket.socket.emit('startGame', {
                 roomCode: roomCode
             });
+            
+            // Spielfeld direkt anzeigen, ohne Neuladen
+            gameTableEl.style.display = 'flex';
+            startGameContainer.style.display = 'none';
         }
     });
     
