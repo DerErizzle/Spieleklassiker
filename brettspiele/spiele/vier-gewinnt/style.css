@@ -9,61 +9,28 @@
     --inactive-turn-color: #7f8c8d;
     --cell-color: white;
     --warning-color: #f39c12;
-    
-    /* Z-Index-Hierarchie für korrekte Darstellung */
-    --z-hitbox: 60;        /* Ganz oben für Klicks */
-    --z-holes: 50;         /* Weiße Löcher */
-    --z-hover: 40;         /* Hover-Effekte */
-    --z-board-front: 30;   /* Vorderseite des Bretts (mit Löchern) */
-    --z-pieces: 20;        /* Fallende Stücke */
-    --z-board-back: 10;    /* Rückseite des Bretts */
 }
 
-/* Spielbrett-Container - ohne Hintergrundfarbe, diese wird durch :before gesetzt */
+/* Spielbrett-Container - Das gesamte Brett */
 .game-board {
     display: inline-block;
+    background-color: var(--board-color);
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     margin-top: 30px;
     position: relative;
+    z-index: 1; /* Basis z-index */
 }
 
-/* Spielbrett strukturieren für korrekten Schichtaufbau */
-.game-board {
-    position: relative;
-    z-index: 0; /* Container */
-}
-.game-board:before {
-    content: '';
-    position: absolute;
-    background-color: var(--board-color);
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 10px;
-    z-index: var(--z-board-front);
-}
-.game-board .column-hitbox { 
-    z-index: var(--z-hitbox); 
-} 
-.game-board .hover-row { 
-    z-index: var(--z-hover); 
-}
-.game-board .cell { 
-    z-index: var(--z-holes);
-    position: relative;
-}
-.game-board .animation-layer { 
-    z-index: var(--z-pieces);
-}
-.game-board .board-rows { 
-    z-index: var(--z-board-back);
-    position: relative;
-}
+/* Die Bretter müssen in einer bestimmten Reihenfolge übereinander liegen:
+   1. Hitbox-Ebene (ganz oben) - nur für Interaktion
+   2. Brett-Overlay mit Löchern
+   3. Spielsteine (inkl. Animation)
+   4. Brett-Hintergrund (ganz unten)
+*/
 
-/* Animations-Schicht für fallende Steine */
+/* Animations-Schicht für fallende Steine - UNTER dem Löcher-Brett */
 .animation-layer {
     position: absolute;
     top: 0;
@@ -71,6 +38,20 @@
     right: 0;
     bottom: 0;
     pointer-events: none;
+    z-index: 2; /* Über dem Hintergrund, unter den Löchern */
+}
+
+/* Der animierte Stein */
+.animation-placeholder {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 50%;
+    position: absolute;
+    transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    opacity: 1 !important; /* Vollständig undurchsichtig */
+    border: none;
+    box-shadow: none;
+    z-index: 2; /* Gleicher z-index wie animation-layer */
 }
 
 /* Zeilen und Zellen */
@@ -78,6 +59,7 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    z-index: 3; /* ÜBER der Animation */
 }
 
 .board-row {
@@ -85,20 +67,16 @@
     flex-direction: row;
 }
 
-/* Allgemeine Styles für alle runden Elemente (Chips) */
-.cell, .hover-piece, .animation-placeholder {
+/* Zellen (die weißen Löcher) */
+.cell {
     width: var(--cell-size);
     height: var(--cell-size);
-    border-radius: 50%;
-    position: relative;
-}
-
-/* Zellen im Brett */
-.cell {
     background-color: var(--cell-color);
+    border-radius: 50%;
     margin: var(--cell-margin);
     transition: background-color 0.1s;
-    cursor: pointer;
+    position: relative;
+    z-index: 3; /* Muss über den fallenden Steinen sein */
 }
 
 /* Unsichtbare Hitbox für die ganze Spalte */
@@ -107,6 +85,7 @@
     top: 0;
     bottom: 0;
     cursor: pointer;
+    z-index: 10; /* Ganz oben für Benutzerinteraktion */
     /* Breite und Position werden in JavaScript dynamisch berechnet */
 }
 
@@ -118,10 +97,14 @@
     display: flex;
     justify-content: center;
     margin-bottom: var(--cell-margin);
+    z-index: 5; /* Über dem Brett, aber unter den Hitboxes */
 }
 
 /* Hover-Stücke */
 .hover-piece {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 50%;
     position: absolute;
     opacity: 0.5;
     transition: left 0.2s ease;
@@ -130,16 +113,6 @@
 /* Gegnerischer Hover-Effekt */
 .opponent-hover {
     opacity: 0.3;
-}
-
-/* Platzhalter für die Animation - Muss undurchsichtig sein */
-.animation-placeholder {
-    position: absolute;
-    transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-    opacity: 1 !important; /* Vollständig undurchsichtig */
-    border: none;
-    box-shadow: none;
-    z-index: var(--z-pieces);
 }
 
 /* Gewinnzellen hervorheben */
@@ -175,12 +148,6 @@
     margin: 15px 0;
     font-weight: bold;
     display: none;
-}
-
-/* Spezifische Animation-Positionierung für den "hinter dem Brett" Effekt */
-.animation-placeholder {
-    position: absolute;
-    z-index: var(--z-pieces);
 }
 
 /* Animationen */
