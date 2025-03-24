@@ -69,15 +69,21 @@
     opacity: 0.3;
 }
 
-/* Verbesserte Animation für fallendes Spielstück */
-.drop-animation {
-    animation: dropPiece 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+/* Platzhalter für die Animation */
+.animation-placeholder {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    top: 0;
+    z-index: 20;
+    transition: transform 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53);
 }
 
+/* Verbesserte Animation für fallendes Spielstück */
 @keyframes dropPiece {
     0% {
         transform: translateY(-400%);
-        opacity: 1;
     }
     70% {
         transform: translateY(10%);

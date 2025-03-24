@@ -15,7 +15,10 @@ class GameSocketClient {
             gameRestarted: [],
             roomCreated: [],
             joinSuccess: [],
-            joinError: []
+            joinError: [],
+            playerDisconnected: [],
+            playerReconnected: [],
+            gameState: []
         };
         
         // Verbindung automatisch herstellen
@@ -89,6 +92,21 @@ class GameSocketClient {
         this.socket.on('joinError', (data) => {
             console.error('Raumbeitritt fehlgeschlagen:', data);
             this._triggerCallback('joinError', data);
+        });
+        
+        this.socket.on('playerDisconnected', (data) => {
+            console.log('Spieler hat Verbindung verloren:', data);
+            this._triggerCallback('playerDisconnected', data);
+        });
+
+        this.socket.on('playerReconnected', (data) => {
+            console.log('Spieler ist wieder verbunden:', data);
+            this._triggerCallback('playerReconnected', data);
+        });
+
+        this.socket.on('gameState', (data) => {
+            console.log('Aktueller Spielstand empfangen:', data);
+            this._triggerCallback('gameState', data);
         });
     }
     
@@ -183,6 +201,18 @@ class GameSocketClient {
         }
         
         this.socket.emit('leaveRoom', {
+            roomCode
+        });
+    }
+    
+    // Aktuellen Spielstand anfordern
+    requestGameState(roomCode) {
+        if (!this.isConnected()) {
+            console.error("Kann Spielstand nicht anfordern: Keine Verbindung zum Server");
+            return;
+        }
+        
+        this.socket.emit('requestGameState', {
             roomCode
         });
     }

@@ -32,12 +32,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const gameControls = document.getElementById('game-controls');
     
     // Neues Element für Verbindungsstatus hinzufügen
-    const connectionStatusEl = document.createElement('div');
-    connectionStatusEl.className = 'connection-status';
-    connectionStatusEl.id = 'connection-status';
-    connectionStatusEl.textContent = 'Der andere Spieler hat die Verbindung verloren...';
-    connectionStatusEl.style.display = 'none';
-    document.querySelector('.game-info-panel').appendChild(connectionStatusEl);
+    const connectionStatusEl = document.getElementById('connection-status') || document.createElement('div');
+    if (!document.getElementById('connection-status')) {
+        connectionStatusEl.className = 'connection-status';
+        connectionStatusEl.id = 'connection-status';
+        connectionStatusEl.textContent = 'Der andere Spieler hat die Verbindung verloren...';
+        connectionStatusEl.style.display = 'none';
+        document.querySelector('.game-info-panel').appendChild(connectionStatusEl);
+    }
     
     // Benutzerdaten anzeigen
     usernameDisplayEl.textContent = username;
@@ -53,6 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let hoverPiece = null;
     let opponentHoverPiece = null;
     let activePlayerColor = userColor; // Tatsächliche Spielerfarbe (kann bei Konflikt geändert werden)
+    let animationRunning = false; // Verhindert mehrere gleichzeitige Animationen
+    let hoverRowEl = null;
     
     // Spielbrett initialisieren (verbessert)
     function initializeBoard() {
@@ -62,6 +66,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const boardRows = document.createElement('div');
         boardRows.className = 'board-rows';
         boardEl.appendChild(boardRows);
+        
+        // Hover-Reihe über dem Brett erstellen
+        hoverRowEl = document.createElement('div');
+        hoverRowEl.className = 'hover-row';
+        boardEl.insertBefore(hoverRowEl, boardRows);
+        
+        // Hover-Stück für den aktuellen Spieler erstellen
+        hoverPiece = document.createElement('div');
+        hoverPiece.className = 'hover-piece';
+        hoverPiece.style.display = 'none';
+        hoverPiece.style.backgroundColor = activePlayerColor;
+        hoverRowEl.appendChild(hoverPiece);
+        
+        // Hover-Stück für den Gegner erstellen
+        opponentHoverPiece = document.createElement('div');
+        opponentHoverPiece.className = 'hover-piece opponent-hover';
+        opponentHoverPiece.style.display = 'none';
+        hoverRowEl.appendChild(opponentHoverPiece);
         
         // Erstelle das Spielbrett in der korrekten Orientierung (7x6)
         // Beginne mit Zeile 0 (oberste Zeile) und arbeite nach unten
@@ -83,24 +105,6 @@ document.addEventListener('DOMContentLoaded', function() {
             boardRows.appendChild(rowDiv);
         }
         
-        // Hover-Reihe über dem Brett erstellen
-        const hoverRow = document.createElement('div');
-        hoverRow.className = 'hover-row';
-        boardEl.insertBefore(hoverRow, boardRows);
-        
-        // Hover-Stück für den aktuellen Spieler erstellen
-        hoverPiece = document.createElement('div');
-        hoverPiece.className = 'hover-piece';
-        hoverPiece.style.display = 'none';
-        hoverPiece.style.backgroundColor = activePlayerColor;
-        hoverRow.appendChild(hoverPiece);
-        
-        // Hover-Stück für den Gegner erstellen
-        opponentHoverPiece = document.createElement('div');
-        opponentHoverPiece.className = 'hover-piece opponent-hover';
-        opponentHoverPiece.style.display = 'none';
-        hoverRow.appendChild(opponentHoverPiece);
-        
         // Hitboxes für Spalten hinzufügen
         for (let col = 0; col < 7; col++) {
             const hitbox = document.createElement('div');
@@ -110,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Event-Listener für die Hitbox
             hitbox.addEventListener('click', () => {
-                if (gameActive && currentPlayerUsername === username) {
+                if (gameActive && currentPlayerUsername === username && !animationRunning) {
                     makeMoveInColumn(col);
                 }
             });
@@ -132,6 +136,24 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             boardEl.appendChild(hitbox);
+        }
+    }
+    
+    // Spielbrett mit dem aktuellen Spielstand aktualisieren
+    function updateBoardDisplay() {
+        if (!gameBoard || !gameBoard.length) return;
+        
+        // Alle Zellen basierend auf dem aktuellen Spielstand aktualisieren
+        for (let row = 0; row < gameBoard.length; row++) {
+            for (let col = 0; col < gameBoard[row].length; col++) {
+                const piece = gameBoard[row][col];
+                if (piece) {
+                    const cell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${col}"]`);
+                    if (cell) {
+                        cell.style.backgroundColor = piece.color;
+                    }
+                }
+            }
         }
     }
     
@@ -189,29 +211,52 @@ document.addEventListener('DOMContentLoaded', function() {
         gameSocket.makeMove(roomCode, column);
     }
     
-    // Spielstein setzen (verbessert)
+    // Verbesserte Animation für fallenden Spielstein
     function placePiece(row, column, playerUsername, playerColor) {
-        if (row === null || column === null) return;
+        if (row === null || column === null || animationRunning) return;
         
-        const cell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${column}"]`);
+        animationRunning = true;
         
-        if (cell) {
-            // Zelle färben
-            cell.style.backgroundColor = playerColor;
-            
-            // Animation hinzufügen (verbessert)
-            cell.classList.add('drop-animation');
-            
-            // HTML5 Audio für Sound
-            const audio = new Audio('../../assets/sounds/piece_drop.mp3');
-            audio.volume = 0.3;
-            audio.play().catch(e => console.log('Audio konnte nicht abgespielt werden:', e));
-            
-            // Animation nach Abschluss entfernen
-            setTimeout(() => {
-                cell.classList.remove('drop-animation');
-            }, 800); // Längere Zeit für die verbesserte Animation
+        // Berechne die Position
+        const cellWidth = 84; // 70px Breite + 14px Margin
+        const leftPosition = column * cellWidth + 7; // +7px für den linken Rand
+        
+        // Finde die Zielzelle
+        const targetCell = boardEl.querySelector(`.cell[data-row="${row}"][data-column="${column}"]`);
+        if (!targetCell) {
+            animationRunning = false;
+            return;
         }
+        
+        // Erstelle den animierten Spielstein
+        const animatedPiece = document.createElement('div');
+        animatedPiece.className = 'animation-placeholder';
+        animatedPiece.style.backgroundColor = playerColor;
+        animatedPiece.style.left = leftPosition + 'px';
+        animatedPiece.style.top = '-70px'; // Startposition über dem Brett
+        
+        // Füge den animierten Stein dem Spielbrett hinzu
+        boardEl.appendChild(animatedPiece);
+        
+        // Berechne die Zielposition für die Animation
+        const targetTop = targetCell.getBoundingClientRect().top - boardEl.getBoundingClientRect().top;
+        
+        // HTML5 Audio für Sound
+        const audio = new Audio('../../assets/sounds/piece_drop.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(e => console.log('Audio konnte nicht abgespielt werden:', e));
+        
+        // Starte die Animation nach einem kurzen Delay
+        setTimeout(() => {
+            animatedPiece.style.transform = `translateY(${targetTop}px)`;
+            
+            // Nach Abschluss der Animation den animierten Stein entfernen und die Zielzelle einfärben
+            setTimeout(() => {
+                boardEl.removeChild(animatedPiece);
+                targetCell.style.backgroundColor = playerColor;
+                animationRunning = false;
+            }, 600); // Entspricht der Animationsdauer in CSS
+        }, 50);
     }
     
     // Spieler-Liste aktualisieren
@@ -389,8 +434,12 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPlayerUsername = data.nextPlayer;
         gameBoard = data.gameState.board;
         
-        updatePlayerList(players);
-        updateGameStatus();
+        // Aktualisiere den Spielstatus nach der Animation
+        setTimeout(() => {
+            updateBoardDisplay();
+            updatePlayerList(players);
+            updateGameStatus();
+        }, 650);
     });
     
     // Spielende
@@ -409,7 +458,10 @@ document.addEventListener('DOMContentLoaded', function() {
         gameStatusEl.className = 'game-status winner-message';
         
         if (data.winningCells && data.winningCells.length > 0) {
-            highlightWinningCells(data.winningCells);
+            // Markiere Gewinnzellen nach Ende der Animation
+            setTimeout(() => {
+                highlightWinningCells(data.winningCells);
+            }, 700);
         }
         
         // Neustart-Button anzeigen (nur für Host)
@@ -424,6 +476,18 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPlayerUsername = data.currentPlayer;
         
         updatePlayerList(players);
+        updateGameStatus();
+    });
+    
+    // Aktuellen Spielstand empfangen (für reconnects)
+    gameSocket.on('gameState', (data) => {
+        console.log('Aktuellen Spielstand empfangen:', data);
+        gameBoard = data.gameState.board;
+        currentPlayerUsername = data.currentPlayer;
+        
+        // Aktualisiere das Brett mit dem aktuellen Spielstand
+        updateBoardDisplay();
+        updatePlayerList(data.players);
         updateGameStatus();
     });
     
@@ -452,6 +516,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Spielbrett initialisieren
     initializeBoard();
     updateGameStatus();
+    
+    // Spiel-Status explizit anfragen (für Reconnect-Szenario)
+    if (gameSocket.isConnected()) {
+        gameSocket.socket.emit('requestGameState', { roomCode });
+    }
     
     // DEBUG: Status anzeigen
     console.log('Spielseite geladen', {

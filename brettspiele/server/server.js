@@ -16,8 +16,10 @@ const io = socketIo(server, {
 // Debug-Modus (auf true setzen für mehr Logging)
 const DEBUG = true;
 
+// Zeit in ms, nach der ein Spieler als getrennt gilt
 const DISCONNECT_TIMEOUT = 3000;
 
+// Verfügbare Farben für automatische Neuzuweisung bei Farbkonflikten
 const AVAILABLE_COLORS = [
     '#e74c3c', // rot
     '#3498db', // blau
@@ -27,6 +29,7 @@ const AVAILABLE_COLORS = [
     '#e67e22'  // orange
 ];
 
+// Timer für Verbindungsverlust-Tracking
 const disconnectTimers = {};
 
 // Debug-Logging-Funktion
@@ -302,7 +305,7 @@ io.on('connection', (socket) => {
                 isHost: p.isHost
             }))
         });
-    
+
         if (rooms[roomCode].gameType === 'vier-gewinnt' && rooms[roomCode].players.length === 2) {
             debugLog('Spiel startet (2 Spieler im Raum):', { roomCode });
             io.to(roomCode).emit('moveUpdate', {
@@ -313,6 +316,59 @@ io.on('connection', (socket) => {
                 gameState: rooms[roomCode].gameState
             });
         }
+        // Wenn der Spieler neu verbindet, sende ihm den aktuellen Spielstand
+        else if (rooms[roomCode].gameType === 'vier-gewinnt') {
+            debugLog('Sende aktuellen Spielstand an neu verbundenen Spieler:', { 
+                roomCode, 
+                username
+            });
+            
+            // Sende den aktuellen Spielstand nur an diesen Client
+            socket.emit('gameState', {
+                gameState: rooms[roomCode].gameState,
+                currentPlayer: rooms[roomCode].players[rooms[roomCode].currentTurn].username,
+                players: rooms[roomCode].players.map(p => ({
+                    username: p.username,
+                    color: p.color,
+                    isHost: p.isHost
+                }))
+            });
+        }
+    });
+    
+    // Aktuellen Spielstand anfordern
+    socket.on('requestGameState', (data) => {
+        const { roomCode } = data;
+        
+        if (!rooms[roomCode]) {
+            debugLog('Spielstatus-Anfrage für nicht existierenden Raum:', { roomCode });
+            return;
+        }
+        
+        const room = rooms[roomCode];
+        
+        // Identifiziere den Spieler
+        const player = room.players.find(p => p.id === socket.id);
+        if (!player) {
+            debugLog('Spielstatus-Anfrage von unbekanntem Spieler:', { roomCode, socketId: socket.id });
+            return;
+        }
+        
+        debugLog('Sende Spielstatus an Spieler:', { 
+            roomCode, 
+            username: player.username
+        });
+        
+        // Sende den aktuellen Spielstand an den Client
+        socket.emit('gameState', {
+            gameState: room.gameState,
+            currentPlayer: room.players[room.currentTurn].username,
+            players: room.players.map(p => ({
+                username: p.username,
+                color: p.color,
+                isHost: p.isHost
+            }))
+        });
     });
     
     // Spielzug für Vier Gewinnt
